@@ -1,11 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
-    if (!window.db || !window.auth) return;
+    const statusEl = document.getElementById('sync-status');
+    
+    // 1. Проверка загрузки Firebase
+    if (!window.db || !window.auth) {
+        statusEl.textContent = "Ошибка: Firebase не загрузился!";
+        statusEl.style.color = "#ef4444";
+        return;
+    }
 
+    statusEl.textContent = "Авторизация...";
+    
+    // 2. Попытка входа с обработкой сетевой ошибки
     window.signInAnonymously(window.auth).then(() => {
+        statusEl.textContent = "Синхронизация...";
         startSync();
+    }).catch((error) => {
+        console.error("Ошибка авторизации:", error);
+        if (error.code === 'auth/network-request-failed') {
+            statusEl.textContent = "Ошибка сети! Отключите VPN/AdBlock";
+        } else {
+            statusEl.textContent = "Ошибка входа: " + error.message;
+        }
+        statusEl.style.color = "#ef4444";
     });
 
-    // --- БАЗА БЛОКОВ (В БУДУЩЕМ МОЖНО ВЫНЕСТИ В НАСТРОЙКИ) ---
+    // --- БАЗА БЛОКОВ ---
     const universalBlocks = {
         photo: [
             "Просьба - присылайте фото авто целиком и фото поврежденного участка на удалении и вблизи. Если причиной поломки было ДТП, кратко изложите подробности - это поможет точнее определить характер повреждений.",
@@ -83,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function startSync() {
         const docRef = window.doc(window.db, "data/main");
         window.onSnapshot(docRef, (docSnap) => {
-            const statusEl = document.getElementById('sync-status');
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 currentData = {
@@ -105,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.setDoc(docRef, currentData, { merge: true });
     }
 
-    // --- ИНИЦИАЛИЗАЦИЯ КОНСТРУКТОРА ---
     function initBuilder() {
         const nicheSelect = document.getElementById('niche-select');
         nicheSelect.innerHTML = '<option value="">-- Выберите нишу --</option>';
@@ -126,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const nicheBlocks = nichesData[nicheKey].blocks;
-        
         const blockConfig = [
             { key: 'photo', label: '1. Просьба прислать фото', source: 'universal' },
             { key: 'visit', label: '2. Призыв приехать на осмотр', source: 'universal' },
@@ -141,12 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         blockConfig.forEach(config => {
             const options = config.source === 'universal' ? universalBlocks[config.key] : nicheBlocks[config.key];
-            
             if (options && options.length > 0) {
-                let selectHtml = `<div class="input-group">
-                    <label>${config.label}</label>
-                    <select class="block-select" data-key="${config.key}" onchange="window.assemblePreview()">
-                        <option value="">-- Не использовать --</option>`;
+                let selectHtml = `<div class="input-group"><label>${config.label}</label><select class="block-select" data-key="${config.key}" onchange="window.assemblePreview()"><option value="">-- Не использовать --</option>`;
                 options.forEach((opt, index) => {
                     selectHtml += `<option value="${index}">Вариант ${index + 1}: ${opt.substring(0, 50)}...</option>`;
                 });
@@ -173,22 +185,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const preview = document.getElementById('ad-preview');
-        preview.value = parts.join('\n\n---\n\n');
+        document.getElementById('ad-preview').value = parts.join('\n\n---\n\n');
         window.updateCounters();
     };
 
     window.updateCounters = function() {
         const title = document.getElementById('ad-title').value;
         const desc = document.getElementById('ad-preview').value;
-        
-        const titleCountEl = document.getElementById('title-count');
-        titleCountEl.textContent = title.length;
-        titleCountEl.parentElement.className = title.length > 50 ? 'char-counter warning' : 'char-counter';
-
-        const descCountEl = document.getElementById('desc-count');
-        descCountEl.textContent = desc.length;
-        descCountEl.parentElement.className = desc.length > 3000 ? 'char-counter warning' : 'char-counter';
+        document.getElementById('title-count').textContent = title.length;
+        document.getElementById('title-count').parentElement.className = title.length > 50 ? 'char-counter warning' : 'char-counter';
+        document.getElementById('desc-count').textContent = desc.length;
+        document.getElementById('desc-count').parentElement.className = desc.length > 3000 ? 'char-counter warning' : 'char-counter';
     };
 
     window.saveAssembledAd = function() {
@@ -198,20 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const nicheKey = document.getElementById('niche-select').value;
 
         if (!title) return alert("Введите название объявления!");
-        if (!description) return alert("Выберите хотя бы один блок для описания!");
+        if (!description) return alert("Выберите хотя бы один блок!");
         if (!nicheKey) return alert("Выберите нишу!");
 
-        currentData.templates.push({
-            id: 'temp_' + Date.now(),
-            title: title,
-            description: description,
-            comment: comment,
-            niche: nicheKey
-        });
-
+        currentData.templates.push({ id: 'temp_' + Date.now(), title, description, comment, niche: nicheKey });
         saveData();
         
-        // Очистка формы
         document.getElementById('ad-title').value = '';
         document.getElementById('ad-comment').value = '';
         document.getElementById('ad-preview').value = '';
@@ -220,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("Объявление сохранено!");
     };
 
-    // --- ОТРИСОВКА СПИСКОВ И МАТРИЦЫ ---
     function renderAll() {
         renderAccounts();
         renderTemplates();
@@ -234,37 +232,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'item';
             div.innerHTML = `
-                <div class="item-info">
-                    <h3>${acc.name}</h3>
-                    <p>${acc.platform || 'Без площадки'}</p>
-                </div>
+                <div class="item-info"><h3>${acc.name}</h3><p>${acc.platform || 'Без площадки'}</p></div>
                 <div class="item-actions">
                     <button onclick="window.openModal('account', '${acc.id}')" title="Редактировать">✏️</button>
                     <button onclick="window.deleteAccount('${acc.id}')" title="Удалить">❌</button>
-                </div>
-            `;
+                </div>`;
             container.appendChild(div);
         });
     }
 
     function renderTemplates() {
         const container = document.getElementById('templates-list');
-        container.innerHTML = currentData.templates.length ? '' : '<p style="color: #888;">Здесь будут ваши готовые объявления</p>';
+        container.innerHTML = currentData.templates.length ? '' : '<p style="color: #888;">Здесь будут ваши объявления</p>';
         currentData.templates.forEach(temp => {
             const div = document.createElement('div');
             div.className = 'item';
             const commentHtml = temp.comment ? `<div class="item-comment">💬 ${temp.comment}</div>` : '';
             div.innerHTML = `
                 <div class="item-info">
-                    <h3>${temp.title}</h3>
-                    ${commentHtml}
-                    <p style="margin-top: 5px;">${temp.description.substring(0, 50)}...</p>
+                    <h3>${temp.title}</h3>${commentHtml}<p style="margin-top:5px;">${temp.description.substring(0, 50)}...</p>
                 </div>
                 <div class="item-actions">
-                    <button onclick="window.copyTemplate('${temp.id}')" title="Скопировать текст">📋</button>
+                    <button onclick="window.copyTemplate('${temp.id}')" title="Скопировать">📋</button>
                     <button onclick="window.deleteTemplate('${temp.id}')" title="Удалить">❌</button>
-                </div>
-            `;
+                </div>`;
             container.appendChild(div);
         });
     }
@@ -273,13 +264,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('matrix-container');
         container.innerHTML = '';
         if (currentData.accounts.length === 0 || currentData.templates.length === 0) {
-            container.innerHTML = '<p style="color: #888;">Добавьте аккаунты и объявления, чтобы увидеть матрицу.</p>';
+            container.innerHTML = '<p style="color: #888;">Добавьте аккаунты и объявления.</p>';
             return;
         }
-
         const table = document.createElement('table');
         table.className = 'matrix-table';
-
         const thead = document.createElement('thead');
         let headerRow = '<tr><th>Объявление \\ Аккаунт</th>';
         currentData.accounts.forEach(acc => headerRow += `<th>${acc.name}</th>`);
@@ -307,35 +296,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.togglePlacement = function(templateId, accountId) {
         const idx = currentData.placements.findIndex(p => p.templateId === templateId && p.accountId === accountId);
-        if (idx > -1) {
-            currentData.placements.splice(idx, 1);
-        } else {
-            currentData.placements.push({ id: 'plc_' + Date.now(), templateId, accountId, date: new Date().toISOString() });
-        }
+        if (idx > -1) currentData.placements.splice(idx, 1);
+        else currentData.placements.push({ id: 'plc_' + Date.now(), templateId, accountId, date: new Date().toISOString() });
         saveData();
     };
 
-    // --- ФУНКЦИИ МОДАЛЬНОГО ОКНА (Аккаунты) ---
     window.openModal = function(type, id = null) {
         const modal = document.getElementById('edit-modal');
-        const title = document.getElementById('modal-title');
-        const f1 = document.getElementById('field-1');
-        const f2 = document.getElementById('field-2');
-        
         modal.dataset.type = type;
         modal.dataset.id = id || '';
-
-        title.textContent = id ? 'Редактировать аккаунт' : 'Новый аккаунт';
+        document.getElementById('modal-title').textContent = id ? 'Редактировать' : 'Новый аккаунт';
         document.getElementById('label-1').textContent = 'Название аккаунта';
-        document.getElementById('label-2').textContent = 'Площадка (Авито, Юла и т.д.)';
+        document.getElementById('label-2').textContent = 'Площадка';
         
         if (id) {
             const acc = currentData.accounts.find(a => a.id === id);
-            f1.value = acc.name;
-            f2.value = acc.platform || '';
+            document.getElementById('field-1').value = acc.name;
+            document.getElementById('field-2').value = acc.platform || '';
         } else {
-            f1.value = '';
-            f2.value = 'Авито';
+            document.getElementById('field-1').value = '';
+            document.getElementById('field-2').value = 'Авито';
         }
         modal.showModal();
     };
@@ -345,17 +325,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = modal.dataset.id;
         const val1 = document.getElementById('field-1').value.trim();
         const val2 = document.getElementById('field-2').value.trim();
-
         if (!val1) return alert("Заполните название");
 
         if (id) {
             const acc = currentData.accounts.find(a => a.id === id);
-            acc.name = val1;
-            acc.platform = val2;
+            acc.name = val1; acc.platform = val2;
         } else {
             currentData.accounts.push({ id: 'acc_' + Date.now(), name: val1, platform: val2 });
         }
-
         saveData();
         modal.close();
     };
@@ -376,10 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.copyTemplate = function(id) {
         const temp = currentData.templates.find(t => t.id === id);
-        if (temp) navigator.clipboard.writeText(temp.description).then(() => alert("Текст описания скопирован!"));
+        if (temp) navigator.clipboard.writeText(temp.description).then(() => alert("Текст скопирован!"));
     };
 
-    // Запуск
     initBuilder();
     document.querySelectorAll('.btn-add')[0].onclick = () => window.openModal('account');
 });
