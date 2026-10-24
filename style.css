@@ -78,3 +78,22 @@ main { padding: 20px; max-width: 800px; margin: 0 auto; display: flex; flex-dire
 .empty {
     color: #d1d5db; /* Серая черточка */
 }
+/* Стили для модального окна */
+dialog {
+    border: none;
+    border-radius: 12px;
+    padding: 25px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin: auto; /* Центрирование */
+}
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5); /* Затемнение фона */
+    backdrop-filter: blur(2px);
+}
+dialog h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+}
