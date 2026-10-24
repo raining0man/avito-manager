@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
         statusEl.style.color = "#ef4444";
     });
 
-    // --- НАЧАЛЬНАЯ БАЗА (Загрузится 1 раз, потом редактируется в БД) ---
     const initialBlocks = {
         universal: {
             photo: ["Просьба - присылайте фото авто целиком и фото поврежденного участка на удалении и вблизи. Если причиной поломки было ДТП, кратко изложите подробности.", "Для точной оценки скиньте общий вид машины и сам дефект (издалека и крупным планом)."],
@@ -62,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     blocks: data.blocks || {}
                 };
                 
-                // Если блоков в БД еще нет — загружаем начальные
                 if (!currentData.blocks.universal || !currentData.blocks.niches) {
                     currentData.blocks = JSON.parse(JSON.stringify(initialBlocks));
                     saveData();
@@ -160,6 +158,21 @@ document.addEventListener('DOMContentLoaded', () => {
         window.assemblePreview();
     };
 
+    window.addNewTitle = function() {
+        const nicheKey = document.getElementById('niche-select').value;
+        if (!nicheKey) return alert("Сначала выберите нишу!");
+        
+        const newTitle = prompt("Введите новое название (до 50 символов):");
+        if (!newTitle || !newTitle.trim()) return;
+        if (newTitle.length > 50) return alert("Название слишком длинное (макс. 50 символов)!");
+
+        if (!currentData.blocks.niches[nicheKey].titles) currentData.blocks.niches[nicheKey].titles = [];
+        currentData.blocks.niches[nicheKey].titles.push(newTitle.trim());
+        
+        saveData();
+        window.updateBuilderBlocks();
+    };
+
     window.addNewBlock = function(nicheKey, blockKey, source) {
         const newText = prompt("Введите текст нового варианта для этого блока:");
         if (!newText || !newText.trim()) return;
@@ -172,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentData.blocks.niches[nicheKey][blockKey].push(newText.trim());
         }
         saveData();
-        alert("Вариант добавлен! Обновите список ниши, чтобы он появился в конструкторе.");
+        window.updateBuilderBlocks();
     };
 
     window.assemblePreview = function() {
@@ -222,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ad-comment').value = '';
         document.getElementById('ad-preview').value = '';
         document.querySelectorAll('.block-select').forEach(s => s.value = '');
+        document.getElementById('title-select').value = '';
         window.updateCounters();
     };
 
@@ -233,7 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!nicheKey) return;
 
-        // Редактор названий
         let html = `<h4 style="margin: 10px 0 5px; font-size: 0.9rem;">Названия объявлений:</h4>`;
         const titles = currentData.blocks.niches[nicheKey].titles || [];
         titles.forEach((t, i) => {
@@ -244,7 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         });
 
-        // Редактор блоков
         const blockKeys = ['problem', 'process', 'advantages', 'cta', 'top_services'];
         blockKeys.forEach(bKey => {
             if (currentData.blocks.niches[nicheKey][bKey]) {
@@ -301,7 +313,14 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.close();
     };
 
-    // --- ОСТАЛЬНОЙ ФУНКЦИОНАЛ (Аккаунты, матрица, списки) ---
+    // --- ОСТАЛЬНОЙ ФУНКЦИОНАЛ ---
+    window.addAccount = function() {
+        const name = prompt("Название аккаунта (например, Авито-1):");
+        if (!name) return;
+        currentData.accounts.push({ id: 'acc_' + Date.now(), name: name, platform: 'Авито' });
+        saveData();
+    };
+
     function renderAccounts() {
         const container = document.getElementById('accounts-list');
         container.innerHTML = currentData.accounts.length ? '' : '<p style="color: #888;">Здесь будут аккаунты</p>';
@@ -394,13 +413,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.copyTemplate = function(id) {
         const temp = currentData.templates.find(t => t.id === id);
         if (temp) navigator.clipboard.writeText(temp.description).then(() => alert("Текст скопирован!"));
-    };
-
-    document.querySelectorAll('.btn-add')[0].onclick = () => {
-        const name = prompt("Название аккаунта:");
-        if (name) {
-            currentData.accounts.push({ id: 'acc_' + Date.now(), name, platform: 'Авито' });
-            saveData();
-        }
     };
 });
