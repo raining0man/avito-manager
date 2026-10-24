@@ -92,7 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const editNicheSelect = document.getElementById('edit-niche-select');
         const filterNiche = document.getElementById('filter-niche');
         
-        // Сохраняем текущее значение фильтра, если оно есть
         const currentFilterVal = filterNiche.value;
         
         nicheSelect.innerHTML = '<option value="">-- Выберите нишу --</option>';
@@ -106,10 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
             filterNiche.innerHTML += `<option value="${key}">${name}</option>`;
         }
 
-        filterNiche.value = currentFilterVal; // Восстанавливаем фильтр
+        filterNiche.value = currentFilterVal;
     }
 
-    // --- КОНСТРУКТОР ---
     window.updateBuilderBlocks = function() {
         const nicheKey = document.getElementById('niche-select').value;
         const container = document.getElementById('block-selectors');
@@ -212,7 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        document.getElementById('ad-preview').value = parts.join('\n\n---\n\n');
+        // НОВЫЙ РАЗДЕЛИТЕЛЬ: перенос строки, дефис-пробел-дефис-пробел-дефис, перенос строки
+        document.getElementById('ad-preview').value = parts.join('\n- - -\n');
         window.updateCounters();
     };
 
@@ -241,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
             description, 
             comment, 
             niche: nicheKey,
-            status: 'active' // Статус по умолчанию
+            status: 'active'
         });
         saveData();
         
@@ -253,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCounters();
     };
 
-    // --- РЕДАКТОР БЛОКОВ ---
     window.renderEditorBlocks = function() {
         const nicheKey = document.getElementById('edit-niche-select').value;
         const container = document.getElementById('editor-container');
@@ -318,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
     };
 
-    // --- МОДАЛЬНЫЕ ОКНА ---
     window.editAccount = function(id) {
         const acc = currentData.accounts.find(a => a.id === id);
         const modal = document.getElementById('edit-modal');
@@ -374,7 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.close();
     };
 
-    // --- АККАУНТЫ ---
     window.addAccount = function() {
         const name = prompt("Название аккаунта (например, Авито-1):");
         if (!name) return;
@@ -407,7 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
     };
 
-    // --- ОБЪЯВЛЕНИЯ (С ФИЛЬТРАМИ И СТАТУСАМИ) ---
     function renderTemplates() {
         const container = document.getElementById('templates-list');
         const searchQuery = document.getElementById('search-templates').value.toLowerCase();
@@ -415,7 +410,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         container.innerHTML = '';
 
-        // Фильтрация
         let filtered = currentData.templates.filter(temp => {
             const matchesSearch = temp.title.toLowerCase().includes(searchQuery) || temp.description.toLowerCase().includes(searchQuery);
             const matchesNiche = nicheFilter === "" || temp.niche === nicheFilter;
@@ -428,7 +422,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         filtered.forEach(temp => {
-            // Получаем названия аккаунтов, где уже размещено
             const placedAccounts = currentData.placements
                 .filter(p => p.templateId === temp.id)
                 .map(p => currentData.accounts.find(a => a.id === p.accountId)?.name)
@@ -438,7 +431,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<div class="badges-container">${placedAccounts.map(name => `<span class="account-badge">${name}</span>`).join('')}</div>` 
                 : '';
 
-            // Статусы
             const status = temp.status || 'active';
             const statusClass = `status-${status}`;
             
@@ -480,7 +472,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- МОДАЛЬНОЕ ОКНО ПРИВЯЗКИ АККАУНТОВ ---
     window.openAccountsModal = function(templateId) {
         const modal = document.getElementById('accounts-modal');
         modal.dataset.templateId = templateId;
@@ -509,10 +500,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const templateId = modal.dataset.templateId;
         const checkboxes = document.querySelectorAll('#accounts-checkboxes input[type="checkbox"]');
         
-        // Удаляем старые привязки для этого объявления
         currentData.placements = currentData.placements.filter(p => p.templateId !== templateId);
 
-        // Добавляем новые
         checkboxes.forEach(cb => {
             if (cb.checked) {
                 currentData.placements.push({
@@ -540,7 +529,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (temp) navigator.clipboard.writeText(temp.description).then(() => alert("Текст скопирован!"));
     };
 
-    // --- ЭКСПОРТ / ИМПОРТ ---
     window.exportData = function() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 2));
         const downloadAnchorNode = document.createElement('a');
