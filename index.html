@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Менеджер объявлений</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Подключение Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // ВСТАВЬТЕ СЮДА ВАШ КОНФИГ ИЗ FIREBASE
+        const firebaseConfig = {
+            apiKey: "ВАШ_API_KEY",
+            authDomain: "ВАШ_AUTH_DOMAIN",
+            projectId: "ВАШ_PROJECT_ID",
+            storageBucket: "ВАШ_STORAGE_BUCKET",
+            messagingSenderId: "ВАШ_SENDER_ID",
+            appId: "ВАШ_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        window.db = db;
+        window.auth = auth;
+        window.doc = doc;
+        window.onSnapshot = onSnapshot;
+        window.setDoc = setDoc;
+        window.signInAnonymously = signInAnonymously;
+    </script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>📋 Менеджер объявлений</h1>
+        <div id="sync-status">Подключение...</div>
+    </header>
+
+    <main>
+        <section class="card">
+            <div class="card-header">
+                <h2>👤 Аккаунты</h2>
+                <button class="btn-add">+ Добавить</button>
+            </div>
+            <div id="accounts-list" class="list-container">
+                <p style="color: #888;">Здесь будут аккаунты</p>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h2>📝 База текстов</h2>
+                <button class="btn-add">+ Добавить</button>
+            </div>
+            <div id="templates-list" class="list-container">
+                <p style="color: #888;">Здесь будут тексты</p>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h2>📊 Матрица размещений</h2>
+            </div>
+            <div id="matrix-container" class="list-container">
+                <p style="color: #888;">Функционал матрицы будет добавлен позже.</p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
