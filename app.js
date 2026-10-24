@@ -84,23 +84,32 @@ document.addEventListener('DOMContentLoaded', () => {
         initSelectors();
         renderAccounts();
         renderTemplates();
-        renderMatrix();
         window.renderEditorBlocks();
     }
 
     function initSelectors() {
         const nicheSelect = document.getElementById('niche-select');
         const editNicheSelect = document.getElementById('edit-niche-select');
+        const filterNiche = document.getElementById('filter-niche');
+        
+        // Сохраняем текущее значение фильтра, если оно есть
+        const currentFilterVal = filterNiche.value;
         
         nicheSelect.innerHTML = '<option value="">-- Выберите нишу --</option>';
         editNicheSelect.innerHTML = '<option value="">-- Выберите нишу --</option>';
+        filterNiche.innerHTML = '<option value="">Все ниши</option>';
         
         for (const key in currentData.blocks.niches) {
-            nicheSelect.innerHTML += `<option value="${key}">${currentData.blocks.niches[key].name}</option>`;
-            editNicheSelect.innerHTML += `<option value="${key}">${currentData.blocks.niches[key].name}</option>`;
+            const name = currentData.blocks.niches[key].name;
+            nicheSelect.innerHTML += `<option value="${key}">${name}</option>`;
+            editNicheSelect.innerHTML += `<option value="${key}">${name}</option>`;
+            filterNiche.innerHTML += `<option value="${key}">${name}</option>`;
         }
+
+        filterNiche.value = currentFilterVal; // Восстанавливаем фильтр
     }
 
+    // --- КОНСТРУКТОР ---
     window.updateBuilderBlocks = function() {
         const nicheKey = document.getElementById('niche-select').value;
         const container = document.getElementById('block-selectors');
@@ -226,7 +235,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!description) return alert("Выберите блоки!");
         if (!nicheKey) return alert("Выберите нишу!");
 
-        currentData.templates.push({ id: 'temp_' + Date.now(), title, description, comment, niche: nicheKey });
+        currentData.templates.push({ 
+            id: 'temp_' + Date.now(), 
+            title, 
+            description, 
+            comment, 
+            niche: nicheKey,
+            status: 'active' // Статус по умолчанию
+        });
         saveData();
         
         document.getElementById('ad-title').value = '';
@@ -237,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCounters();
     };
 
+    // --- РЕДАКТОР БЛОКОВ ---
     window.renderEditorBlocks = function() {
         const nicheKey = document.getElementById('edit-niche-select').value;
         const container = document.getElementById('editor-container');
@@ -271,7 +288,37 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = html;
     };
 
-    // --- ЛОГИКА МОДАЛЬНОГО ОКНА (Аккаунты и Блоки) ---
+    window.editBlock = function(nicheKey, blockKey, source, index) {
+        let text = source === 'universal' ? currentData.blocks.universal[blockKey][index] : currentData.blocks.niches[nicheKey][blockKey][index];
+        
+        const modal = document.getElementById('edit-modal');
+        modal.dataset.type = 'block';
+        modal.dataset.nicheKey = nicheKey;
+        modal.dataset.blockKey = blockKey;
+        modal.dataset.source = source;
+        modal.dataset.index = index;
+
+        document.getElementById('modal-title').textContent = 'Редактировать текст';
+        document.getElementById('group-1').style.display = 'none';
+        document.getElementById('group-2').style.display = 'flex';
+        document.getElementById('label-2').textContent = 'Текст';
+        document.getElementById('field-2').value = text;
+        document.getElementById('field-2').rows = 8;
+
+        modal.showModal();
+    };
+
+    window.deleteBlock = function(nicheKey, blockKey, source, index) {
+        if (!confirm("Удалить этот вариант?")) return;
+        if (source === 'universal') {
+            currentData.blocks.universal[blockKey].splice(index, 1);
+        } else {
+            currentData.blocks.niches[nicheKey][blockKey].splice(index, 1);
+        }
+        saveData();
+    };
+
+    // --- МОДАЛЬНЫЕ ОКНА ---
     window.editAccount = function(id) {
         const acc = currentData.accounts.find(a => a.id === id);
         const modal = document.getElementById('edit-modal');
@@ -280,42 +327,15 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.dataset.id = id;
 
         document.getElementById('modal-title').textContent = 'Редактировать аккаунт';
-        
-        // Настраиваем первое поле (Название)
         document.getElementById('group-1').style.display = 'flex';
         document.getElementById('label-1').textContent = 'Название аккаунта';
         document.getElementById('field-1').value = acc.name;
         document.getElementById('field-1').type = 'text';
 
-        // Настраиваем второе поле (Площадка)
         document.getElementById('group-2').style.display = 'flex';
         document.getElementById('label-2').textContent = 'Площадка';
         document.getElementById('field-2').value = acc.platform || '';
         document.getElementById('field-2').rows = 1;
-
-        modal.showModal();
-    };
-
-    window.editBlock = function(nicheKey, blockKey, source, index) {
-        let text = source === 'universal' ? currentData.blocks.universal[blockKey][index] : currentData.blocks.niches[nicheKey][blockKey][index];
-        
-        const modal = document.getElementById('edit-modal');
-        
-        modal.dataset.type = 'block';
-        modal.dataset.nicheKey = nicheKey;
-        modal.dataset.blockKey = blockKey;
-        modal.dataset.source = source;
-        modal.dataset.index = index;
-
-        document.getElementById('modal-title').textContent = 'Редактировать текст';
-
-        // Скрываем первое поле, используем только большое текстовое
-        document.getElementById('group-1').style.display = 'none';
-        
-        document.getElementById('group-2').style.display = 'flex';
-        document.getElementById('label-2').textContent = 'Текст';
-        document.getElementById('field-2').value = text;
-        document.getElementById('field-2').rows = 8;
 
         modal.showModal();
     };
@@ -354,16 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.close();
     };
 
-    window.deleteBlock = function(nicheKey, blockKey, source, index) {
-        if (!confirm("Удалить этот вариант?")) return;
-        if (source === 'universal') {
-            currentData.blocks.universal[blockKey].splice(index, 1);
-        } else {
-            currentData.blocks.niches[nicheKey][blockKey].splice(index, 1);
-        }
-        saveData();
-    };
-
     // --- АККАУНТЫ ---
     window.addAccount = function() {
         const name = prompt("Название аккаунта (например, Авито-1):");
@@ -379,10 +389,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'item';
             div.innerHTML = `
-                <div class="item-info"><h3>${acc.name}</h3><p>${acc.platform || 'Без площадки'}</p></div>
-                <div class="item-actions">
-                    <button onclick="window.editAccount('${acc.id}')" title="Редактировать">✏️</button>
-                    <button onclick="window.deleteAccount('${acc.id}')" title="Удалить">❌</button>
+                <div class="item-main">
+                    <div class="item-info"><h3>${acc.name}</h3><p>${acc.platform || 'Без площадки'}</p></div>
+                    <div class="item-actions">
+                        <button onclick="window.editAccount('${acc.id}')" title="Редактировать">✏️</button>
+                        <button onclick="window.deleteAccount('${acc.id}')" title="Удалить">❌</button>
+                    </div>
                 </div>`;
             container.appendChild(div);
         });
@@ -395,65 +407,125 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
     };
 
-    // --- ОБЪЯВЛЕНИЯ И МАТРИЦА ---
+    // --- ОБЪЯВЛЕНИЯ (С ФИЛЬТРАМИ И СТАТУСАМИ) ---
     function renderTemplates() {
         const container = document.getElementById('templates-list');
-        container.innerHTML = currentData.templates.length ? '' : '<p style="color: #888;">Здесь будут ваши объявления</p>';
-        currentData.templates.forEach(temp => {
+        const searchQuery = document.getElementById('search-templates').value.toLowerCase();
+        const nicheFilter = document.getElementById('filter-niche').value;
+        
+        container.innerHTML = '';
+
+        // Фильтрация
+        let filtered = currentData.templates.filter(temp => {
+            const matchesSearch = temp.title.toLowerCase().includes(searchQuery) || temp.description.toLowerCase().includes(searchQuery);
+            const matchesNiche = nicheFilter === "" || temp.niche === nicheFilter;
+            return matchesSearch && matchesNiche;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<p style="color: #888;">Ничего не найдено по вашему запросу.</p>';
+            return;
+        }
+
+        filtered.forEach(temp => {
+            // Получаем названия аккаунтов, где уже размещено
+            const placedAccounts = currentData.placements
+                .filter(p => p.templateId === temp.id)
+                .map(p => currentData.accounts.find(a => a.id === p.accountId)?.name)
+                .filter(Boolean);
+
+            const badgesHtml = placedAccounts.length > 0 
+                ? `<div class="badges-container">${placedAccounts.map(name => `<span class="account-badge">${name}</span>`).join('')}</div>` 
+                : '';
+
+            // Статусы
+            const status = temp.status || 'active';
+            const statusClass = `status-${status}`;
+            
             const div = document.createElement('div');
             div.className = 'item';
             const commentHtml = temp.comment ? `<div class="item-comment">💬 ${temp.comment}</div>` : '';
+            
             div.innerHTML = `
-                <div class="item-info">
-                    <h3>${temp.title}</h3>${commentHtml}<p style="margin-top:5px;">${temp.description.substring(0, 50)}...</p>
+                <div class="item-main">
+                    <div class="item-info">
+                        <h3>${temp.title}</h3>
+                        ${commentHtml}
+                        <p style="margin-top:5px;">${temp.description.substring(0, 70)}...</p>
+                    </div>
+                    <div class="item-actions">
+                        <button onclick="window.copyTemplate('${temp.id}')" title="Скопировать текст">📋</button>
+                        <button onclick="window.openAccountsModal('${temp.id}')" title="Привязать к аккаунтам">👤</button>
+                        <button onclick="window.deleteTemplate('${temp.id}')" title="Удалить">❌</button>
+                    </div>
                 </div>
-                <div class="item-actions">
-                    <button onclick="window.copyTemplate('${temp.id}')" title="Скопировать">📋</button>
-                    <button onclick="window.deleteTemplate('${temp.id}')" title="Удалить">❌</button>
-                </div>`;
+                <div class="item-footer">
+                    <div>${badgesHtml}</div>
+                    <select class="status-select ${statusClass}" onchange="window.updateStatus('${temp.id}', this.value)">
+                        <option value="active" ${status === 'active' ? 'selected' : ''}>Активно</option>
+                        <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>Заблокировано</option>
+                        <option value="archived" ${status === 'archived' ? 'selected' : ''}>Архив</option>
+                    </select>
+                </div>
+            `;
             container.appendChild(div);
         });
     }
 
-    function renderMatrix() {
-        const container = document.getElementById('matrix-container');
-        container.innerHTML = '';
-        if (currentData.accounts.length === 0 || currentData.templates.length === 0) {
-            container.innerHTML = '<p style="color: #888;">Добавьте аккаунты и объявления.</p>';
-            return;
+    window.updateStatus = function(id, newStatus) {
+        const temp = currentData.templates.find(t => t.id === id);
+        if (temp) {
+            temp.status = newStatus;
+            saveData();
         }
-        const table = document.createElement('table');
-        table.className = 'matrix-table';
-        const thead = document.createElement('thead');
-        let headerRow = '<tr><th>Объявление \\ Аккаунт</th>';
-        currentData.accounts.forEach(acc => headerRow += `<th>${acc.name}</th>`);
-        headerRow += '</tr>';
-        thead.innerHTML = headerRow;
-        table.appendChild(thead);
+    };
 
-        const tbody = document.createElement('tbody');
-        currentData.templates.forEach(temp => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td class="row-title">${temp.title}</td>`;
+    // --- МОДАЛЬНОЕ ОКНО ПРИВЯЗКИ АККАУНТОВ ---
+    window.openAccountsModal = function(templateId) {
+        const modal = document.getElementById('accounts-modal');
+        modal.dataset.templateId = templateId;
+        
+        const container = document.getElementById('accounts-checkboxes');
+        container.innerHTML = '';
+
+        if (currentData.accounts.length === 0) {
+            container.innerHTML = '<p>У вас пока нет добавленных аккаунтов.</p>';
+        } else {
             currentData.accounts.forEach(acc => {
-                const isPlaced = currentData.placements.find(p => p.templateId === temp.id && p.accountId === acc.id);
-                const cell = document.createElement('td');
-                cell.className = 'matrix-cell';
-                cell.innerHTML = isPlaced ? '<span class="check">✅</span>' : '<span class="empty">—</span>';
-                cell.onclick = () => window.togglePlacement(temp.id, acc.id);
-                tr.appendChild(cell);
+                const isChecked = currentData.placements.some(p => p.templateId === templateId && p.accountId === acc.id);
+                container.innerHTML += `
+                    <label class="checkbox-row">
+                        <input type="checkbox" value="${acc.id}" ${isChecked ? 'checked' : ''}>
+                        <span>${acc.name} (${acc.platform})</span>
+                    </label>
+                `;
             });
-            tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-        container.appendChild(table);
-    }
+        }
+        modal.showModal();
+    };
 
-    window.togglePlacement = function(templateId, accountId) {
-        const idx = currentData.placements.findIndex(p => p.templateId === templateId && p.accountId === accountId);
-        if (idx > -1) currentData.placements.splice(idx, 1);
-        else currentData.placements.push({ id: 'plc_' + Date.now(), templateId, accountId, date: new Date().toISOString() });
+    window.saveAccountsLink = function() {
+        const modal = document.getElementById('accounts-modal');
+        const templateId = modal.dataset.templateId;
+        const checkboxes = document.querySelectorAll('#accounts-checkboxes input[type="checkbox"]');
+        
+        // Удаляем старые привязки для этого объявления
+        currentData.placements = currentData.placements.filter(p => p.templateId !== templateId);
+
+        // Добавляем новые
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                currentData.placements.push({
+                    id: 'plc_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    templateId: templateId,
+                    accountId: cb.value,
+                    date: new Date().toISOString()
+                });
+            }
+        });
+
         saveData();
+        modal.close();
     };
 
     window.deleteTemplate = function(id) {
@@ -466,5 +538,40 @@ document.addEventListener('DOMContentLoaded', () => {
     window.copyTemplate = function(id) {
         const temp = currentData.templates.find(t => t.id === id);
         if (temp) navigator.clipboard.writeText(temp.description).then(() => alert("Текст скопирован!"));
+    };
+
+    // --- ЭКСПОРТ / ИМПОРТ ---
+    window.exportData = function() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "avito_manager_backup_" + new Date().toISOString().slice(0,10) + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    };
+
+    window.importData = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (importedData.accounts && importedData.templates && importedData.blocks) {
+                    if(confirm("Вы уверены? Текущие данные будут заменены резервной копией.")) {
+                        currentData = importedData;
+                        saveData();
+                        alert("База успешно восстановлена!");
+                    }
+                } else {
+                    alert("Ошибка: неверный формат файла.");
+                }
+            } catch (err) {
+                alert("Ошибка чтения файла: " + err.message);
+            }
+        };
+        reader.readAsText(file);
     };
 });
