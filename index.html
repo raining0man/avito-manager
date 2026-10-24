@@ -12,20 +12,21 @@
         import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // ВСТАВЬТЕ СЮДА ВАШ КОНФИГ ИЗ FIREBASE
+        // ТВОЙ КОНФИГ УЖЕ ВСТАВЛЕН СЮДА
         const firebaseConfig = {
-            apiKey: "ВАШ_API_KEY",
-            authDomain: "ВАШ_AUTH_DOMAIN",
-            projectId: "ВАШ_PROJECT_ID",
-            storageBucket: "ВАШ_STORAGE_BUCKET",
-            messagingSenderId: "ВАШ_SENDER_ID",
-            appId: "ВАШ_APP_ID"
+            apiKey: "AIzaSyA3xBY633zOFgmDtoESeTZAviXGoRAKQnQ",
+            authDomain: "avito-manager-3a84b.firebaseapp.com",
+            projectId: "avito-manager-3a84b",
+            storageBucket: "avito-manager-3a84b.firebasestorage.app",
+            messagingSenderId: "205598987349",
+            appId: "1:205598987349:web:d8ae2abe3fc8c9ba1f70dc"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         
+        // Передача в глобальную область для app.js
         window.db = db;
         window.auth = auth;
         window.doc = doc;
@@ -61,7 +62,7 @@
 
                 <!-- Блоки выбора -->
                 <div id="block-selectors">
-                    <!-- Сюда будут рендериться селекты для блоков (Проблема, Что делаем и т.д.) -->
+                    <!-- Сюда будут рендериться селекты для блоков -->
                 </div>
 
                 <div class="input-group">
