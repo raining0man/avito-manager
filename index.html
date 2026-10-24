@@ -4,15 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Менеджер и Конструктор объявлений</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css">
     
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // ТВОЙ КОНФИГ УЖЕ ВСТАВЛЕН СЮДА
         const firebaseConfig = {
             apiKey: "AIzaSyA3xBY633zOFgmDtoESeTZAviXGoRAKQnQ",
             authDomain: "avito-manager-3a84b.firebaseapp.com",
@@ -26,13 +25,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        // Передача в глобальную область для app.js
-        window.db = db;
-        window.auth = auth;
-        window.doc = doc;
-        window.onSnapshot = onSnapshot;
-        window.setDoc = setDoc;
-        window.signInAnonymously = signInAnonymously;
+        window.db = db; window.auth = auth; window.doc = doc; window.onSnapshot = onSnapshot; window.setDoc = setDoc; window.signInAnonymously = signInAnonymously;
     </script>
     <script src="app.js" defer></script>
 </head>
@@ -43,7 +36,7 @@
     </header>
 
     <main>
-        <!-- БЛОК 1: КОНСТРУКТОР ОБЪЯВЛЕНИЙ -->
+        <!-- БЛОК 1: КОНСТРУКТОР -->
         <section class="card">
             <div class="card-header">
                 <h2>🛠 Конструктор объявлений</h2>
@@ -55,14 +48,16 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Название объявления для Авито (макс. 50 символов):</label>
-                    <input type="text" id="ad-title" oninput="window.updateCounters()" placeholder="Например: Переварка порогов с лужением">
+                    <label>Название объявления (макс. 50 символов):</label>
+                    <select id="title-select" onchange="document.getElementById('ad-title').value = this.value; window.updateCounters();" style="margin-bottom: 5px;">
+                        <option value="">-- Выбрать из готовых --</option>
+                    </select>
+                    <input type="text" id="ad-title" oninput="window.updateCounters()" placeholder="Или введите новое название">
                     <div class="char-counter"><span id="title-count">0</span> / 50</div>
                 </div>
 
-                <!-- Блоки выбора -->
                 <div id="block-selectors">
-                    <!-- Сюда будут рендериться селекты для блоков -->
+                    <!-- Сюда рендерятся селекты с кнопками "+" -->
                 </div>
 
                 <div class="input-group">
@@ -73,14 +68,31 @@
 
                 <div class="input-group">
                     <label>Комментарий (внутренний):</label>
-                    <input type="text" id="ad-comment" placeholder="Например: Залито на аккаунт Авито-1 24.10">
+                    <input type="text" id="ad-comment" placeholder="Например: Залито на аккаунт Авито-1">
                 </div>
 
                 <button class="btn-add" onclick="window.saveAssembledAd()" style="width: 100%; margin-top: 10px;">💾 Сохранить готовое объявление</button>
             </div>
         </section>
 
-        <!-- БЛОК 2: АККАУНТЫ -->
+        <!-- БЛОК 2: УПРАВЛЕНИЕ БЛОКАМИ -->
+        <section class="card">
+            <div class="card-header">
+                <h2>🗂 Управление контентом (Редактор)</h2>
+            </div>
+            <div class="list-container builder-form">
+                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Здесь можно редактировать или удалять существующие блоки и названия.</p>
+                <div class="input-group">
+                    <label>Выберите нишу:</label>
+                    <select id="edit-niche-select" onchange="window.renderEditorBlocks()"></select>
+                </div>
+                <div id="editor-container">
+                    <!-- Сюда рендерятся списки блоков для редактирования -->
+                </div>
+            </div>
+        </section>
+
+        <!-- БЛОК 3: АККАУНТЫ -->
         <section class="card">
             <div class="card-header">
                 <h2>👤 Аккаунты</h2>
@@ -89,7 +101,7 @@
             <div id="accounts-list" class="list-container"></div>
         </section>
 
-        <!-- БЛОК 3: ГОТОВЫЕ ОБЪЯВЛЕНИЯ -->
+        <!-- БЛОК 4: ОБЪЯВЛЕНИЯ И МАТРИЦА -->
         <section class="card">
             <div class="card-header">
                 <h2>📦 Сохраненные объявления</h2>
@@ -97,7 +109,6 @@
             <div id="templates-list" class="list-container"></div>
         </section>
 
-        <!-- БЛОК 4: МАТРИЦА -->
         <section class="card">
             <div class="card-header">
                 <h2>📊 Матрица размещений</h2>
@@ -106,17 +117,12 @@
         </section>
     </main>
 
-    <!-- Модальное окно для Аккаунтов -->
     <dialog id="edit-modal">
         <form method="dialog">
-            <h2 id="modal-title">Добавить</h2>
-            <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
-                <label id="label-1" style="font-weight: 600; font-size: 0.9rem;">Название</label>
-                <input type="text" id="field-1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
-            </div>
+            <h2 id="modal-title">Редактировать</h2>
             <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
-                <label id="label-2" style="font-weight: 600; font-size: 0.9rem;">Площадка</label>
-                <textarea id="field-2" rows="1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;"></textarea>
+                <label id="label-1" style="font-weight: 600; font-size: 0.9rem;">Текст</label>
+                <textarea id="field-1" rows="8" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;"></textarea>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" onclick="document.getElementById('edit-modal').close()" style="padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer;">Отмена</button>
