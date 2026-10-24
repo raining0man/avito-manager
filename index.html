@@ -31,8 +31,17 @@
 </head>
 <body>
     <header>
-        <h1>📋 Менеджер объявлений</h1>
-        <div id="sync-status">Подключение...</div>
+        <div style="display:flex; align-items:center; gap: 10px;">
+            <h1>📋 Менеджер</h1>
+            <span id="sync-status">Подключение...</span>
+        </div>
+        <div class="header-btns">
+            <button class="btn-icon" onclick="window.exportData()" title="Скачать базу (JSON)">📥 Экспорт</button>
+            <label class="btn-icon" title="Загрузить базу (JSON)">
+                📤 Импорт
+                <input type="file" id="import-file" onchange="window.importData(event)" accept=".json" hidden>
+            </label>
+        </div>
     </header>
 
     <main>
@@ -77,11 +86,11 @@
 
         <section class="card">
             <div class="card-header">
-                <h2>🗂 Управление контентом (Редактор)</h2>
+                <h2>🗂 Управление контентом</h2>
             </div>
             <div class="list-container builder-form">
                 <div class="input-group">
-                    <label>Выберите нишу:</label>
+                    <label>Выберите нишу для редактирования:</label>
                     <select id="edit-niche-select" onchange="window.renderEditorBlocks()"></select>
                 </div>
                 <div id="editor-container"></div>
@@ -96,39 +105,49 @@
             <div id="accounts-list" class="list-container"></div>
         </section>
 
+        <!-- БЛОК ОБЪЯВЛЕНИЙ С ФИЛЬТРАМИ -->
         <section class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                 <h2>📦 Сохраненные объявления</h2>
+                <div class="filters-row">
+                    <input type="text" id="search-templates" placeholder="🔍 Поиск по названию..." oninput="window.renderTemplates()">
+                    <select id="filter-niche" onchange="window.renderTemplates()">
+                        <option value="">Все ниши</option>
+                    </select>
+                </div>
             </div>
             <div id="templates-list" class="list-container"></div>
         </section>
-
-        <section class="card">
-            <div class="card-header">
-                <h2>📊 Матрица размещений</h2>
-            </div>
-            <div id="matrix-container" class="matrix-wrapper"></div>
-        </section>
     </main>
 
-    <!-- Универсальное модальное окно (для аккаунтов и блоков) -->
+    <!-- Окно для текстов и названий -->
     <dialog id="edit-modal">
         <form method="dialog">
             <h2 id="modal-title">Редактировать</h2>
-            
             <div id="group-1" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
                 <label id="label-1" style="font-weight: 600; font-size: 0.9rem;">Название</label>
                 <input type="text" id="field-1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
             </div>
-
             <div id="group-2" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
                 <label id="label-2" style="font-weight: 600; font-size: 0.9rem;">Текст / Площадка</label>
                 <textarea id="field-2" rows="8" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;"></textarea>
             </div>
-
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" onclick="document.getElementById('edit-modal').close()" style="padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer;">Отмена</button>
                 <button type="button" onclick="window.saveModal()" style="padding: 10px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: bold;">Сохранить</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Окно для привязки аккаунтов -->
+    <dialog id="accounts-modal">
+        <form method="dialog">
+            <h2>Привязать к аккаунтам</h2>
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Поставьте галочки на аккаунтах, где размещено это объявление.</p>
+            <div id="accounts-checkboxes" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="document.getElementById('accounts-modal').close()" style="padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer;">Отмена</button>
+                <button type="button" onclick="window.saveAccountsLink()" style="padding: 10px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: bold;">Сохранить</button>
             </div>
         </form>
     </dialog>
