@@ -12,9 +12,13 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; padding-bottom: 50px; }
-header { background: var(--card-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-header h1 { font-size: 1.2rem; }
+header { background: var(--card-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
+header h1 { font-size: 1.2rem; margin-right: 10px; }
 #sync-status { font-size: 0.8rem; color: #f59e0b; font-weight: bold; }
+
+.header-btns { display: flex; gap: 10px; }
+.btn-icon { background: #f3f4f6; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 500; display: flex; align-items: center; transition: 0.2s; }
+.btn-icon:hover { background: #e5e7eb; }
 
 main { padding: 20px; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
@@ -34,14 +38,20 @@ main { padding: 20px; max-width: 900px; margin: 0 auto; display: flex; flex-dire
 .char-counter { text-align: right; font-size: 0.8rem; color: var(--text-muted); }
 .char-counter.warning { color: var(--danger); font-weight: bold; }
 
-/* Блоки выбора с кнопкой + */
+/* Фильтры */
+.filters-row { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 250px; }
+.filters-row input { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; flex: 1; }
+.filters-row select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
+
+/* Блоки выбора */
 .block-row { display: flex; gap: 10px; align-items: center; }
 .block-row select { flex: 1; }
 .btn-plus { background: #e5e7eb; color: #374151; border: none; min-width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .btn-plus:hover { background: #d1d5db; }
 
-/* Элементы списков */
-.item { padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; background: white; }
+/* Карточки */
+.item { padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; background: white; flex-direction: column; gap: 10px; }
+.item-main { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; }
 .item-info { flex: 1; padding-right: 15px; }
 .item-info h3 { font-size: 1rem; margin-bottom: 5px; word-break: break-word; }
 .item-info p { font-size: 0.85rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -50,22 +60,24 @@ main { padding: 20px; max-width: 900px; margin: 0 auto; display: flex; flex-dire
 .item-actions button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 5px; border-radius: 4px; }
 .item-actions button:hover { background: #f3f4f6; }
 
-/* Матрица */
-.matrix-wrapper { overflow-x: auto; padding: 15px 20px; -webkit-overflow-scrolling: touch; }
-.matrix-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-.matrix-table th, .matrix-table td { border: 1px solid var(--border); padding: 10px; text-align: center; }
-.matrix-table th { background: #f9fafb; font-weight: 600; font-size: 0.85rem; position: sticky; top: 0; }
-.row-title { text-align: left !important; font-size: 0.9rem; font-weight: 500; background: #fafafa; min-width: 150px; max-width: 250px; word-break: break-word; }
-.matrix-cell { cursor: pointer; transition: background 0.2s; user-select: none; font-size: 1.2rem; }
-.matrix-cell:hover { background: #f0fdf4; }
-.check { color: var(--success); font-weight: bold; }
-.empty { color: #d1d5db; }
+/* Дополнительно для объявлений */
+.item-footer { display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px dashed #e5e7eb; padding-top: 10px; flex-wrap: wrap; gap: 10px; }
+.status-select { padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.8rem; cursor: pointer; outline: none; }
+.status-active { background-color: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.status-blocked { background-color: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.status-archived { background-color: #f3f4f6; color: #4b5563; border-color: #d1d5db; }
+
+.badges-container { display: flex; gap: 5px; flex-wrap: wrap; }
+.account-badge { font-size: 0.75rem; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
 
 /* Модальное окно */
 dialog { border: none; border-radius: 12px; padding: 25px; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: auto; }
 dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
 dialog h2 { margin-top: 0; margin-bottom: 20px; font-size: 1.3rem; }
 
-/* Редактор */
 .editor-block { background: #f9fafb; border: 1px solid #e5e7eb; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .editor-block p { font-size: 0.85rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.checkbox-row { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 6px; background: #f9fafb; border: 1px solid #e5e7eb; cursor: pointer; }
+.checkbox-row input { width: 18px; height: 18px; cursor: pointer; }
+.checkbox-row label { cursor: pointer; font-weight: 500; font-size: 0.95rem; }
