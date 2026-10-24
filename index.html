@@ -70,5 +70,26 @@
             </div>
         </section>
     </main>
+        <!-- Модальное окно для добавления и редактирования -->
+    <dialog id="edit-modal">
+        <form method="dialog">
+            <h2 id="modal-title">Добавить</h2>
+            
+            <div id="field-1-group" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
+                <label id="label-1" style="font-weight: 600; font-size: 0.9rem;">Название</label>
+                <input type="text" id="field-1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+            </div>
+
+            <div id="field-2-group" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
+                <label id="label-2" style="font-weight: 600; font-size: 0.9rem;">Текст</label>
+                <textarea id="field-2" rows="12" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; resize: vertical;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="document.getElementById('edit-modal').close()" style="padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer;">Отмена</button>
+                <button type="button" onclick="window.saveModal()" style="padding: 10px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: bold;">Сохранить</button>
+            </div>
+        </form>
+    </dialog>
 </body>
 </html>
