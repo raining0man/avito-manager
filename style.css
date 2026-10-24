@@ -25,3 +25,56 @@ main { padding: 20px; max-width: 800px; margin: 0 auto; display: flex; flex-dire
 .btn-add:hover { opacity: 0.8; }
 
 .list-container { padding: 15px 20px; min-height: 100px; }
+/* Стили для Матрицы */
+.matrix-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 500px; /* Чтобы на телефоне таблица прокручивалась, а не сжималась */
+}
+
+.matrix-table th, .matrix-table td {
+    border: 1px solid var(--border);
+    padding: 10px;
+    text-align: center;
+}
+
+.matrix-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    font-size: 0.85rem;
+    position: sticky;
+    top: 0;
+}
+
+.row-title {
+    text-align: left !important;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: #fafafa;
+    min-width: 150px;
+}
+
+.matrix-cell {
+    cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
+    font-size: 1.2rem;
+}
+
+.matrix-cell:hover {
+    background: #f0fdf4; /* Легкий зеленый при наведении */
+}
+
+.check {
+    color: #10b981; /* Зеленая галочка */
+    font-weight: bold;
+}
+
+.empty {
+    color: #d1d5db; /* Серая черточка */
+}
