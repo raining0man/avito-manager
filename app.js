@@ -101,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- КОНСТРУКТОР ---
     window.updateBuilderBlocks = function() {
         const nicheKey = document.getElementById('niche-select').value;
         const container = document.getElementById('block-selectors');
@@ -116,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Заполняем названия
         const titles = currentData.blocks.niches[nicheKey].titles || [];
         titles.forEach(t => {
             titleSelect.innerHTML += `<option value="${t}">${t}</option>`;
@@ -239,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCounters();
     };
 
-    // --- РЕДАКТОР КОНТЕНТА ---
     window.renderEditorBlocks = function() {
         const nicheKey = document.getElementById('edit-niche-select').value;
         const container = document.getElementById('editor-container');
@@ -278,6 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let text = source === 'universal' ? currentData.blocks.universal[blockKey][index] : currentData.blocks.niches[nicheKey][blockKey][index];
         
         const modal = document.getElementById('edit-modal');
+        
+        // Исправленная запись в dataset (camelCase)
         modal.dataset.nicheKey = nicheKey;
         modal.dataset.blockKey = blockKey;
         modal.dataset.source = source;
@@ -302,7 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const newText = document.getElementById('field-1').value.trim();
         if (!newText) return alert("Текст не может быть пустым");
 
-        const { nichekey: nicheKey, blockkey: blockKey, source, index } = modal.dataset;
+        // Исправленная чтение из dataset (camelCase)
+        const nicheKey = modal.dataset.nicheKey;
+        const blockKey = modal.dataset.blockKey;
+        const source = modal.dataset.source;
+        const index = modal.dataset.index;
         
         if (source === 'universal') {
             currentData.blocks.universal[blockKey][index] = newText;
@@ -313,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.close();
     };
 
-    // --- ОСТАЛЬНОЙ ФУНКЦИОНАЛ ---
     window.addAccount = function() {
         const name = prompt("Название аккаунта (например, Авито-1):");
         if (!name) return;
