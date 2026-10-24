@@ -49,10 +49,13 @@
 
                 <div class="input-group">
                     <label>Название объявления (макс. 50 символов):</label>
-                    <select id="title-select" onchange="document.getElementById('ad-title').value = this.value; window.updateCounters();" style="margin-bottom: 5px;">
-                        <option value="">-- Выбрать из готовых --</option>
-                    </select>
-                    <input type="text" id="ad-title" oninput="window.updateCounters()" placeholder="Или введите новое название">
+                    <div class="block-row" style="margin-bottom: 5px;">
+                        <select id="title-select" onchange="document.getElementById('ad-title').value = this.value; window.updateCounters();">
+                            <option value="">-- Выбрать из готовых --</option>
+                        </select>
+                        <button class="btn-plus" onclick="window.addNewTitle()" title="Добавить новое название">+</button>
+                    </div>
+                    <input type="text" id="ad-title" oninput="window.updateCounters()" placeholder="Или введите новое название вручную">
                     <div class="char-counter"><span id="title-count">0</span> / 50</div>
                 </div>
 
@@ -96,7 +99,7 @@
         <section class="card">
             <div class="card-header">
                 <h2>👤 Аккаунты</h2>
-                <button class="btn-add">+ Добавить</button>
+                <button class="btn-add" onclick="window.addAccount()">+ Добавить</button>
             </div>
             <div id="accounts-list" class="list-container"></div>
         </section>
