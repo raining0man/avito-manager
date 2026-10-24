@@ -36,7 +36,6 @@
     </header>
 
     <main>
-        <!-- БЛОК 1: КОНСТРУКТОР -->
         <section class="card">
             <div class="card-header">
                 <h2>🛠 Конструктор объявлений</h2>
@@ -59,9 +58,7 @@
                     <div class="char-counter"><span id="title-count">0</span> / 50</div>
                 </div>
 
-                <div id="block-selectors">
-                    <!-- Сюда рендерятся селекты с кнопками "+" -->
-                </div>
+                <div id="block-selectors"></div>
 
                 <div class="input-group">
                     <label>Предпросмотр описания (макс. 3000 символов):</label>
@@ -78,24 +75,19 @@
             </div>
         </section>
 
-        <!-- БЛОК 2: УПРАВЛЕНИЕ БЛОКАМИ -->
         <section class="card">
             <div class="card-header">
                 <h2>🗂 Управление контентом (Редактор)</h2>
             </div>
             <div class="list-container builder-form">
-                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Здесь можно редактировать или удалять существующие блоки и названия.</p>
                 <div class="input-group">
                     <label>Выберите нишу:</label>
                     <select id="edit-niche-select" onchange="window.renderEditorBlocks()"></select>
                 </div>
-                <div id="editor-container">
-                    <!-- Сюда рендерятся списки блоков для редактирования -->
-                </div>
+                <div id="editor-container"></div>
             </div>
         </section>
 
-        <!-- БЛОК 3: АККАУНТЫ -->
         <section class="card">
             <div class="card-header">
                 <h2>👤 Аккаунты</h2>
@@ -104,7 +96,6 @@
             <div id="accounts-list" class="list-container"></div>
         </section>
 
-        <!-- БЛОК 4: ОБЪЯВЛЕНИЯ И МАТРИЦА -->
         <section class="card">
             <div class="card-header">
                 <h2>📦 Сохраненные объявления</h2>
@@ -120,13 +111,21 @@
         </section>
     </main>
 
+    <!-- Универсальное модальное окно (для аккаунтов и блоков) -->
     <dialog id="edit-modal">
         <form method="dialog">
             <h2 id="modal-title">Редактировать</h2>
-            <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
-                <label id="label-1" style="font-weight: 600; font-size: 0.9rem;">Текст</label>
-                <textarea id="field-1" rows="8" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;"></textarea>
+            
+            <div id="group-1" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
+                <label id="label-1" style="font-weight: 600; font-size: 0.9rem;">Название</label>
+                <input type="text" id="field-1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
             </div>
+
+            <div id="group-2" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
+                <label id="label-2" style="font-weight: 600; font-size: 0.9rem;">Текст / Площадка</label>
+                <textarea id="field-2" rows="8" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;"></textarea>
+            </div>
+
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" onclick="document.getElementById('edit-modal').close()" style="padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer;">Отмена</button>
                 <button type="button" onclick="window.saveModal()" style="padding: 10px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: bold;">Сохранить</button>
