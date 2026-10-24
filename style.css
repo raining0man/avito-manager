@@ -37,7 +37,7 @@ main { padding: 20px; max-width: 900px; margin: 0 auto; display: flex; flex-dire
 /* Блоки выбора с кнопкой + */
 .block-row { display: flex; gap: 10px; align-items: center; }
 .block-row select { flex: 1; }
-.btn-plus { background: #e5e7eb; color: #374151; border: none; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.btn-plus { background: #e5e7eb; color: #374151; border: none; min-width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .btn-plus:hover { background: #d1d5db; }
 
 /* Элементы списков */
