@@ -1,10 +1,13 @@
 :root {
     --primary: #2563eb;
+    --primary-hover: #1d4ed8;
     --bg-color: #f3f4f6;
     --card-bg: #ffffff;
     --text-main: #1f2937;
     --text-muted: #6b7280;
     --border: #e5e7eb;
+    --danger: #ef4444;
+    --success: #10b981;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -15,85 +18,52 @@ header { background: var(--card-bg); padding: 15px 20px; display: flex; justify-
 header h1 { font-size: 1.2rem; }
 #sync-status { font-size: 0.8rem; color: #f59e0b; font-weight: bold; }
 
-main { padding: 20px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+main { padding: 20px; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
 .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
 .card-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: #f9fafb; }
 .card-header h2 { font-size: 1.1rem; }
 
-.btn-add { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-.btn-add:hover { opacity: 0.8; }
+.btn-add { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background 0.2s; font-size: 0.95rem; }
+.btn-add:hover { background: var(--primary-hover); }
 
 .list-container { padding: 15px 20px; min-height: 100px; }
+
+/* Стили для формы конструктора */
+.builder-form { display: flex; flex-direction: column; gap: 15px; }
+.input-group { display: flex; flex-direction: column; gap: 5px; }
+.input-group label { font-weight: 600; font-size: 0.9rem; color: #374151; }
+.input-group select, .input-group input[type="text"], .input-group textarea {
+    width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; font-family: inherit; transition: border-color 0.2s;
+}
+.input-group select:focus, .input-group input:focus, .input-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+.input-group textarea { resize: vertical; background: #f9fafb; }
+
+.char-counter { text-align: right; font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+.char-counter.warning { color: var(--danger); font-weight: bold; }
+
+/* Списки элементов (Аккаунты, Объявления) */
+.item { padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; background: white; }
+.item-info { flex: 1; padding-right: 15px; }
+.item-info h3 { font-size: 1rem; margin-bottom: 5px; word-break: break-word; }
+.item-info p { font-size: 0.85rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.item-comment { font-size: 0.8rem; color: #b45309; background: #fef3c7; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 8px; }
+.item-actions { display: flex; gap: 5px; }
+.item-actions button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 5px; border-radius: 4px; transition: background 0.2s; }
+.item-actions button:hover { background: #f3f4f6; }
+
 /* Стили для Матрицы */
-.matrix-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
+.matrix-wrapper { overflow-x: auto; padding: 15px 20px; -webkit-overflow-scrolling: touch; }
+.matrix-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+.matrix-table th, .matrix-table td { border: 1px solid var(--border); padding: 10px; text-align: center; }
+.matrix-table th { background: #f9fafb; font-weight: 600; font-size: 0.85rem; position: sticky; top: 0; }
+.row-title { text-align: left !important; font-size: 0.9rem; font-weight: 500; background: #fafafa; min-width: 150px; max-width: 250px; word-break: break-word; }
+.matrix-cell { cursor: pointer; transition: background 0.2s; user-select: none; font-size: 1.2rem; }
+.matrix-cell:hover { background: #f0fdf4; }
+.check { color: var(--success); font-weight: bold; }
+.empty { color: #d1d5db; }
 
-.matrix-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 500px; /* Чтобы на телефоне таблица прокручивалась, а не сжималась */
-}
-
-.matrix-table th, .matrix-table td {
-    border: 1px solid var(--border);
-    padding: 10px;
-    text-align: center;
-}
-
-.matrix-table th {
-    background: #f9fafb;
-    font-weight: 600;
-    font-size: 0.85rem;
-    position: sticky;
-    top: 0;
-}
-
-.row-title {
-    text-align: left !important;
-    font-size: 0.9rem;
-    font-weight: 500;
-    background: #fafafa;
-    min-width: 150px;
-}
-
-.matrix-cell {
-    cursor: pointer;
-    transition: background 0.2s;
-    user-select: none;
-    font-size: 1.2rem;
-}
-
-.matrix-cell:hover {
-    background: #f0fdf4; /* Легкий зеленый при наведении */
-}
-
-.check {
-    color: #10b981; /* Зеленая галочка */
-    font-weight: bold;
-}
-
-.empty {
-    color: #d1d5db; /* Серая черточка */
-}
-/* Стили для модального окна */
-dialog {
-    border: none;
-    border-radius: 12px;
-    padding: 25px;
-    width: 90%;
-    max-width: 600px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    margin: auto; /* Центрирование */
-}
-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.5); /* Затемнение фона */
-    backdrop-filter: blur(2px);
-}
-dialog h2 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.3rem;
-}
+/* Модальное окно */
+dialog { border: none; border-radius: 12px; padding: 25px; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: auto; }
+dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+dialog h2 { margin-top: 0; margin-bottom: 20px; font-size: 1.3rem; }
