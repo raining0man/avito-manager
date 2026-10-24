@@ -271,19 +271,87 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = html;
     };
 
+    // --- ЛОГИКА МОДАЛЬНОГО ОКНА (Аккаунты и Блоки) ---
+    window.editAccount = function(id) {
+        const acc = currentData.accounts.find(a => a.id === id);
+        const modal = document.getElementById('edit-modal');
+        
+        modal.dataset.type = 'account';
+        modal.dataset.id = id;
+
+        document.getElementById('modal-title').textContent = 'Редактировать аккаунт';
+        
+        // Настраиваем первое поле (Название)
+        document.getElementById('group-1').style.display = 'flex';
+        document.getElementById('label-1').textContent = 'Название аккаунта';
+        document.getElementById('field-1').value = acc.name;
+        document.getElementById('field-1').type = 'text';
+
+        // Настраиваем второе поле (Площадка)
+        document.getElementById('group-2').style.display = 'flex';
+        document.getElementById('label-2').textContent = 'Площадка';
+        document.getElementById('field-2').value = acc.platform || '';
+        document.getElementById('field-2').rows = 1;
+
+        modal.showModal();
+    };
+
     window.editBlock = function(nicheKey, blockKey, source, index) {
         let text = source === 'universal' ? currentData.blocks.universal[blockKey][index] : currentData.blocks.niches[nicheKey][blockKey][index];
         
         const modal = document.getElementById('edit-modal');
         
-        // Исправленная запись в dataset (camelCase)
+        modal.dataset.type = 'block';
         modal.dataset.nicheKey = nicheKey;
         modal.dataset.blockKey = blockKey;
         modal.dataset.source = source;
         modal.dataset.index = index;
 
-        document.getElementById('field-1').value = text;
+        document.getElementById('modal-title').textContent = 'Редактировать текст';
+
+        // Скрываем первое поле, используем только большое текстовое
+        document.getElementById('group-1').style.display = 'none';
+        
+        document.getElementById('group-2').style.display = 'flex';
+        document.getElementById('label-2').textContent = 'Текст';
+        document.getElementById('field-2').value = text;
+        document.getElementById('field-2').rows = 8;
+
         modal.showModal();
+    };
+
+    window.saveModal = function() {
+        const modal = document.getElementById('edit-modal');
+        const type = modal.dataset.type;
+
+        if (type === 'account') {
+            const id = modal.dataset.id;
+            const name = document.getElementById('field-1').value.trim();
+            const platform = document.getElementById('field-2').value.trim();
+            if (!name) return alert("Название не может быть пустым");
+
+            const acc = currentData.accounts.find(a => a.id === id);
+            acc.name = name;
+            acc.platform = platform;
+        } 
+        else if (type === 'block') {
+            const newText = document.getElementById('field-2').value.trim();
+            if (!newText) return alert("Текст не может быть пустым");
+
+            const nicheKey = modal.dataset.nicheKey;
+            const blockKey = modal.dataset.blockKey;
+            const source = modal.dataset.source;
+            const index = modal.dataset.index;
+            
+            if (source === 'universal') {
+                currentData.blocks.universal[blockKey][index] = newText;
+            } else {
+                currentData.blocks.niches[nicheKey][blockKey][index] = newText;
+            }
+        }
+
+        saveData();
+        modal.close();
     };
 
     window.deleteBlock = function(nicheKey, blockKey, source, index) {
@@ -296,26 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
     };
 
-    window.saveModal = function() {
-        const modal = document.getElementById('edit-modal');
-        const newText = document.getElementById('field-1').value.trim();
-        if (!newText) return alert("Текст не может быть пустым");
-
-        // Исправленная чтение из dataset (camelCase)
-        const nicheKey = modal.dataset.nicheKey;
-        const blockKey = modal.dataset.blockKey;
-        const source = modal.dataset.source;
-        const index = modal.dataset.index;
-        
-        if (source === 'universal') {
-            currentData.blocks.universal[blockKey][index] = newText;
-        } else {
-            currentData.blocks.niches[nicheKey][blockKey][index] = newText;
-        }
-        saveData();
-        modal.close();
-    };
-
+    // --- АККАУНТЫ ---
     window.addAccount = function() {
         const name = prompt("Название аккаунта (например, Авито-1):");
         if (!name) return;
@@ -332,12 +381,21 @@ document.addEventListener('DOMContentLoaded', () => {
             div.innerHTML = `
                 <div class="item-info"><h3>${acc.name}</h3><p>${acc.platform || 'Без площадки'}</p></div>
                 <div class="item-actions">
-                    <button onclick="window.deleteAccount('${acc.id}')">❌</button>
+                    <button onclick="window.editAccount('${acc.id}')" title="Редактировать">✏️</button>
+                    <button onclick="window.deleteAccount('${acc.id}')" title="Удалить">❌</button>
                 </div>`;
             container.appendChild(div);
         });
     }
 
+    window.deleteAccount = function(id) {
+        if (!confirm("Удалить аккаунт?")) return;
+        currentData.accounts = currentData.accounts.filter(a => a.id !== id);
+        currentData.placements = currentData.placements.filter(p => p.accountId !== id);
+        saveData();
+    };
+
+    // --- ОБЪЯВЛЕНИЯ И МАТРИЦА ---
     function renderTemplates() {
         const container = document.getElementById('templates-list');
         container.innerHTML = currentData.templates.length ? '' : '<p style="color: #888;">Здесь будут ваши объявления</p>';
@@ -395,13 +453,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const idx = currentData.placements.findIndex(p => p.templateId === templateId && p.accountId === accountId);
         if (idx > -1) currentData.placements.splice(idx, 1);
         else currentData.placements.push({ id: 'plc_' + Date.now(), templateId, accountId, date: new Date().toISOString() });
-        saveData();
-    };
-
-    window.deleteAccount = function(id) {
-        if (!confirm("Удалить аккаунт?")) return;
-        currentData.accounts = currentData.accounts.filter(a => a.id !== id);
-        currentData.placements = currentData.placements.filter(p => p.accountId !== id);
         saveData();
     };
 
