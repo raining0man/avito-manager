@@ -5,6 +5,79 @@ document.addEventListener('DOMContentLoaded', () => {
         startSync();
     });
 
+    // --- БАЗА БЛОКОВ (В БУДУЩЕМ МОЖНО ВЫНЕСТИ В НАСТРОЙКИ) ---
+    const universalBlocks = {
+        photo: [
+            "Просьба - присылайте фото авто целиком и фото поврежденного участка на удалении и вблизи. Если причиной поломки было ДТП, кратко изложите подробности - это поможет точнее определить характер повреждений.",
+            "Для точной оценки скиньте общий вид машины и сам дефект (издалека и крупным планом). Если была авария — напишите пару слов о том, как это произошло."
+        ],
+        visit: [
+            "А лучше приезжайте на бесплатный осмотр! Покажем фронт работ и проконсультируем. Решение всегда останется за вами.",
+            "Запишитесь на бесплатный осмотр. Мастер всё проверит, расскажет подробно, а вы уже решите, подходит вам это или нет."
+        ],
+        brands: [
+            "Работаем с авто: Lada, УАЗ, ГАЗ, Toyota, Nissan, Volkswagen, BMW, Mercedes-Benz, Audi, Mazda, Kia, Hyundai и другими.",
+            "Обслуживаем все популярные марки: BMW, Mercedes-Benz, Audi, Volkswagen, Toyota, Kia, Hyundai, Skoda, Lada, Mazda и другие."
+        ],
+        location: [
+            "📍 Находимся в 5 минутах от м. Старая Деревня.\nНапишите или позвоните — забронируем место в очереди.",
+            "📍 Мы в 5 минутах ходьбы от м. Старая Деревня.\nОставьте сообщение — ответим и предложим удобное время для визита."
+        ]
+    };
+
+    const nichesData = {
+        "thresholds": {
+            name: "Кузовной ремонт / Переварка порогов",
+            blocks: {
+                problem: [
+                    "Хотите забыть о ржавчине навсегда? Мы не просто варим металл, мы восстанавливаем его с премиальной защитой. Используем технологию лужения оловом. Гарантия на все швы — 12 месяцев.",
+                    "Сквозная ржавчина на порогах? Пора варить. Сделаем всё четко, с гарантией 12 месяцев. Работаем быстро: от 3 до 7 дней в зависимости от объема."
+                ],
+                process: [
+                    "🔧 Что мы делаем:\n— Демонтаж навесных элементов (двери, крылья)\n— Изготовление ремвставок по точным замерам\n— Вырезка пораженного коррозией металла до чистого\n— Сварка полуавтоматом\n— Обработка скрытых полостей антикором\n— Лужение оловом\n— Шпатлевка, грунтовка и покраска",
+                    "Этапы работ:\n— Подготовка кузова\n— Подбор деталей по VIN либо изготовление ремвставок\n— Вырезка гнилого металла\n— Сварка полуавтоматом\n— Зачистка швов\n— Обработка антикором\n— Шпатлевка, грунтовка, покраска"
+                ],
+                advantages: [
+                    "💡 Почему автовладельцы выбирают нас:\n— Лужение оловом — это 100% гарантия, что порог не сгниет изнутри\n— Никакого навязывания: смотрим бесплатно\n— Полный цикл в одном месте (сварка + малярка)\n— Прозрачный фотоотчет: всегда покажем, что было под краской",
+                    "Почему стоит обратиться к нам:\n— Свои ремвставки вместо дешевых «заплаток»\n— Качественный антикор со всех сторон\n— Один сервис на все: ходовая, двигатель, кузов, малярка\n— Показываем старый металл до того, как его срежем"
+                ],
+                top_services: [
+                    "🛠 Топ услуг:\n— Переварка одного или двух порогов\n— Лужение кузова оловом\n— Переварка арок\n— Переварка стаканов\n— Частичная переварка\n— Переварка с покраской или антикором",
+                    "Что можем сделать:\n— Частичный ремонт или полная переварка\n— Сварка порогов с антикором или покраской\n— Косметический ремонт без сварки\n— Переварка арок и стаканов"
+                ],
+                cta: [
+                    "Напишите — забронируем место в очереди на ближайшее время.",
+                    "Оставьте заявку — проконсультируем и назовём точную стоимость."
+                ]
+            }
+        },
+        "painting": {
+            name: "Малярные работы / Покраска",
+            blocks: {
+                problem: [
+                    "Царапины, сколы или выгоревшая краска? Вернём автомобилю заводской вид. Красим в профессиональной камере с точным компьютерным подбором цвета. Гарантия 12 месяцев.",
+                    "Хотите обновить внешний вид авто? Выполним локальную или полную покраску с идеальным подбором цвета по коду."
+                ],
+                process: [
+                    "🔧 Что входит в покраску:\n— Подготовка поверхности, шлифовка и обезжиривание\n— Нанесение грунта и шпатлёвка (при необходимости)\n— Компьютерный подбор цвета по коду (спектрофотометр)\n— Покраска в камере (без пыли и подтёков)\n— Нанесение лака и финишная полировка",
+                    "Этапы работ:\n— Мойка и оценка ЛКП\n— Шлифовка и обезжиривание\n— Грунтование\n— Подбор цвета\n— Покраска в камере\n— Полировка"
+                ],
+                advantages: [
+                    "💡 Чем мы полезны:\n— Собственная покрасочная камера — идеальное покрытие\n— Подбираем цвет по коду и спектрофотометру — границу не видно\n— Показываем пробный образец до начала покраски\n— Все работы под одной крышей",
+                    "Наши плюсы:\n— Работаем с любыми марками авто\n— Используем качественные материалы\n— Даем гарантию на ЛКП\n— Прозрачный фотоотчет до и после"
+                ],
+                top_services: [
+                    "🛠 Топ услуг:\n— Покраска одного элемента\n— Локальная покраска\n— Покраска переходом\n— Покраска нескольких элементов\n— Полировка кузова\n— Удаление царапин и сколов",
+                    "Что мы красим:\n— Крылья, двери, бамперы, капот\n— Локальные участки\n— Пластик и молдинги\n— Полировка после покраски"
+                ],
+                cta: [
+                    "Скиньте фото повреждения в чат — сориентируем по цене и срокам.",
+                    "Позвоните — подберём удобное время для визита в малярный цех."
+                ]
+            }
+        }
+    };
+
     let currentData = { accounts: [], templates: [], placements: [] };
 
     function startSync() {
@@ -32,17 +105,131 @@ document.addEventListener('DOMContentLoaded', () => {
         window.setDoc(docRef, currentData, { merge: true });
     }
 
+    // --- ИНИЦИАЛИЗАЦИЯ КОНСТРУКТОРА ---
+    function initBuilder() {
+        const nicheSelect = document.getElementById('niche-select');
+        nicheSelect.innerHTML = '<option value="">-- Выберите нишу --</option>';
+        for (const key in nichesData) {
+            nicheSelect.innerHTML += `<option value="${key}">${nichesData[key].name}</option>`;
+        }
+    }
+
+    window.updateBuilderBlocks = function() {
+        const nicheKey = document.getElementById('niche-select').value;
+        const container = document.getElementById('block-selectors');
+        container.innerHTML = '';
+
+        if (!nicheKey) {
+            document.getElementById('ad-preview').value = '';
+            window.updateCounters();
+            return;
+        }
+
+        const nicheBlocks = nichesData[nicheKey].blocks;
+        
+        const blockConfig = [
+            { key: 'photo', label: '1. Просьба прислать фото', source: 'universal' },
+            { key: 'visit', label: '2. Призыв приехать на осмотр', source: 'universal' },
+            { key: 'problem', label: '3. Описание проблемы', source: 'niche' },
+            { key: 'process', label: '4. Что мы делаем', source: 'niche' },
+            { key: 'advantages', label: '5. Почему выбирают нас', source: 'niche' },
+            { key: 'cta', label: '6. Призыв', source: 'niche' },
+            { key: 'top_services', label: '7. Топ услуг', source: 'niche' },
+            { key: 'brands', label: '8. Работаем с марками', source: 'universal' },
+            { key: 'location', label: '9. Находимся', source: 'universal' }
+        ];
+
+        blockConfig.forEach(config => {
+            const options = config.source === 'universal' ? universalBlocks[config.key] : nicheBlocks[config.key];
+            
+            if (options && options.length > 0) {
+                let selectHtml = `<div class="input-group">
+                    <label>${config.label}</label>
+                    <select class="block-select" data-key="${config.key}" onchange="window.assemblePreview()">
+                        <option value="">-- Не использовать --</option>`;
+                options.forEach((opt, index) => {
+                    selectHtml += `<option value="${index}">Вариант ${index + 1}: ${opt.substring(0, 50)}...</option>`;
+                });
+                selectHtml += `</select></div>`;
+                container.innerHTML += selectHtml;
+            }
+        });
+
+        window.assemblePreview();
+    };
+
+    window.assemblePreview = function() {
+        const selects = document.querySelectorAll('.block-select');
+        const parts = [];
+        const nicheKey = document.getElementById('niche-select').value;
+
+        selects.forEach(select => {
+            const key = select.dataset.key;
+            const index = select.value;
+            if (index !== "") {
+                const isUniversal = universalBlocks[key] !== undefined;
+                const text = isUniversal ? universalBlocks[key][index] : nichesData[nicheKey].blocks[key][index];
+                parts.push(text);
+            }
+        });
+
+        const preview = document.getElementById('ad-preview');
+        preview.value = parts.join('\n\n---\n\n');
+        window.updateCounters();
+    };
+
+    window.updateCounters = function() {
+        const title = document.getElementById('ad-title').value;
+        const desc = document.getElementById('ad-preview').value;
+        
+        const titleCountEl = document.getElementById('title-count');
+        titleCountEl.textContent = title.length;
+        titleCountEl.parentElement.className = title.length > 50 ? 'char-counter warning' : 'char-counter';
+
+        const descCountEl = document.getElementById('desc-count');
+        descCountEl.textContent = desc.length;
+        descCountEl.parentElement.className = desc.length > 3000 ? 'char-counter warning' : 'char-counter';
+    };
+
+    window.saveAssembledAd = function() {
+        const title = document.getElementById('ad-title').value.trim();
+        const description = document.getElementById('ad-preview').value.trim();
+        const comment = document.getElementById('ad-comment').value.trim();
+        const nicheKey = document.getElementById('niche-select').value;
+
+        if (!title) return alert("Введите название объявления!");
+        if (!description) return alert("Выберите хотя бы один блок для описания!");
+        if (!nicheKey) return alert("Выберите нишу!");
+
+        currentData.templates.push({
+            id: 'temp_' + Date.now(),
+            title: title,
+            description: description,
+            comment: comment,
+            niche: nicheKey
+        });
+
+        saveData();
+        
+        // Очистка формы
+        document.getElementById('ad-title').value = '';
+        document.getElementById('ad-comment').value = '';
+        document.getElementById('ad-preview').value = '';
+        document.querySelectorAll('.block-select').forEach(s => s.value = '');
+        window.updateCounters();
+        alert("Объявление сохранено!");
+    };
+
+    // --- ОТРИСОВКА СПИСКОВ И МАТРИЦЫ ---
     function renderAll() {
         renderAccounts();
         renderTemplates();
         renderMatrix();
     }
 
-    // --- ОТРИСОВКА СПИСКОВ ---
     function renderAccounts() {
         const container = document.getElementById('accounts-list');
         container.innerHTML = currentData.accounts.length ? '' : '<p style="color: #888;">Здесь будут аккаунты</p>';
-        
         currentData.accounts.forEach(acc => {
             const div = document.createElement('div');
             div.className = 'item';
@@ -62,19 +249,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderTemplates() {
         const container = document.getElementById('templates-list');
-        container.innerHTML = currentData.templates.length ? '' : '<p style="color: #888;">Здесь будут тексты</p>';
-        
+        container.innerHTML = currentData.templates.length ? '' : '<p style="color: #888;">Здесь будут ваши готовые объявления</p>';
         currentData.templates.forEach(temp => {
             const div = document.createElement('div');
             div.className = 'item';
+            const commentHtml = temp.comment ? `<div class="item-comment">💬 ${temp.comment}</div>` : '';
             div.innerHTML = `
                 <div class="item-info">
                     <h3>${temp.title}</h3>
-                    <p>${temp.description.substring(0, 40)}...</p>
+                    ${commentHtml}
+                    <p style="margin-top: 5px;">${temp.description.substring(0, 50)}...</p>
                 </div>
                 <div class="item-actions">
-                    <button onclick="window.copyTemplate('${temp.id}')" title="Скопировать">📋</button>
-                    <button onclick="window.openModal('template', '${temp.id}')" title="Редактировать">✏️</button>
+                    <button onclick="window.copyTemplate('${temp.id}')" title="Скопировать текст">📋</button>
                     <button onclick="window.deleteTemplate('${temp.id}')" title="Удалить">❌</button>
                 </div>
             `;
@@ -82,13 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- МАТРИЦА (Осталась без изменений) ---
     function renderMatrix() {
         const container = document.getElementById('matrix-container');
         container.innerHTML = '';
-
         if (currentData.accounts.length === 0 || currentData.templates.length === 0) {
-            container.innerHTML = '<p style="color: #888;">Добавьте аккаунты и тексты.</p>';
+            container.innerHTML = '<p style="color: #888;">Добавьте аккаунты и объявления, чтобы увидеть матрицу.</p>';
             return;
         }
 
@@ -96,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         table.className = 'matrix-table';
 
         const thead = document.createElement('thead');
-        let headerRow = '<tr><th>Текст \\ Аккаунт</th>';
+        let headerRow = '<tr><th>Объявление \\ Аккаунт</th>';
         currentData.accounts.forEach(acc => headerRow += `<th>${acc.name}</th>`);
         headerRow += '</tr>';
         thead.innerHTML = headerRow;
@@ -130,78 +315,45 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
     };
 
-    // --- УПРАВЛЕНИЕ МОДАЛЬНЫМ ОКНОМ ---
+    // --- ФУНКЦИИ МОДАЛЬНОГО ОКНА (Аккаунты) ---
     window.openModal = function(type, id = null) {
         const modal = document.getElementById('edit-modal');
         const title = document.getElementById('modal-title');
         const f1 = document.getElementById('field-1');
         const f2 = document.getElementById('field-2');
-        const l1 = document.getElementById('label-1');
-        const l2 = document.getElementById('label-2');
         
         modal.dataset.type = type;
         modal.dataset.id = id || '';
 
-        if (type === 'account') {
-            title.textContent = id ? 'Редактировать аккаунт' : 'Новый аккаунт';
-            l1.textContent = 'Название аккаунта';
-            l2.textContent = 'Площадка (Авито, Юла и т.д.)';
-            f2.rows = 1; // Уменьшаем поле для аккаунта
-            
-            if (id) {
-                const acc = currentData.accounts.find(a => a.id === id);
-                f1.value = acc.name;
-                f2.value = acc.platform || '';
-            } else {
-                f1.value = '';
-                f2.value = 'Авито';
-            }
-        } 
-        else if (type === 'template') {
-            title.textContent = id ? 'Редактировать текст' : 'Новый текст';
-            l1.textContent = 'Название (для себя)';
-            l2.textContent = 'Текст объявления';
-            f2.rows = 12; // Возвращаем большое поле для текста
-            
-            if (id) {
-                const temp = currentData.templates.find(t => t.id === id);
-                f1.value = temp.title;
-                f2.value = temp.description;
-            } else {
-                f1.value = '';
-                f2.value = '';
-            }
+        title.textContent = id ? 'Редактировать аккаунт' : 'Новый аккаунт';
+        document.getElementById('label-1').textContent = 'Название аккаунта';
+        document.getElementById('label-2').textContent = 'Площадка (Авито, Юла и т.д.)';
+        
+        if (id) {
+            const acc = currentData.accounts.find(a => a.id === id);
+            f1.value = acc.name;
+            f2.value = acc.platform || '';
+        } else {
+            f1.value = '';
+            f2.value = 'Авито';
         }
         modal.showModal();
     };
 
     window.saveModal = function() {
         const modal = document.getElementById('edit-modal');
-        const type = modal.dataset.type;
         const id = modal.dataset.id;
         const val1 = document.getElementById('field-1').value.trim();
         const val2 = document.getElementById('field-2').value.trim();
 
         if (!val1) return alert("Заполните название");
 
-        if (type === 'account') {
-            if (id) {
-                const acc = currentData.accounts.find(a => a.id === id);
-                acc.name = val1;
-                acc.platform = val2;
-            } else {
-                currentData.accounts.push({ id: 'acc_' + Date.now(), name: val1, platform: val2 });
-            }
-        } 
-        else if (type === 'template') {
-            if (!val2) return alert("Вставьте текст объявления");
-            if (id) {
-                const temp = currentData.templates.find(t => t.id === id);
-                temp.title = val1;
-                temp.description = val2;
-            } else {
-                currentData.templates.push({ id: 'temp_' + Date.now(), title: val1, description: val2 });
-            }
+        if (id) {
+            const acc = currentData.accounts.find(a => a.id === id);
+            acc.name = val1;
+            acc.platform = val2;
+        } else {
+            currentData.accounts.push({ id: 'acc_' + Date.now(), name: val1, platform: val2 });
         }
 
         saveData();
@@ -216,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.deleteTemplate = function(id) {
-        if (!confirm("Удалить текст?")) return;
+        if (!confirm("Удалить объявление?")) return;
         currentData.templates = currentData.templates.filter(t => t.id !== id);
         currentData.placements = currentData.placements.filter(p => p.templateId !== id);
         saveData();
@@ -224,10 +376,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.copyTemplate = function(id) {
         const temp = currentData.templates.find(t => t.id === id);
-        if (temp) navigator.clipboard.writeText(temp.description).then(() => alert("Скопировано!"));
+        if (temp) navigator.clipboard.writeText(temp.description).then(() => alert("Текст описания скопирован!"));
     };
 
-    // Привязка кнопок
+    // Запуск
+    initBuilder();
     document.querySelectorAll('.btn-add')[0].onclick = () => window.openModal('account');
-    document.querySelectorAll('.btn-add')[1].onclick = () => window.openModal('template');
 });
