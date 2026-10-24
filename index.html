@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Менеджер объявлений</title>
+    <title>Менеджер и Конструктор объявлений</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Подключение Firebase SDK -->
+    
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // ВСТАВЬТЕ СЮДА ВАШ КОНФИГ ИЗ FIREBASE
-         const firebaseConfig = {
-    apiKey: "AIzaSyA3xBY633zOFgmDtoESeTZAviXGoRAKQnQ",
-    authDomain: "avito-manager-3a84b.firebaseapp.com",
-    projectId: "avito-manager-3a84b",
-    storageBucket: "avito-manager-3a84b.firebasestorage.app",
-    messagingSenderId: "205598987349",
-    appId: "1:205598987349:web:d8ae2abe3fc8c9ba1f70dc"
-  };
+        const firebaseConfig = {
+            apiKey: "ВАШ_API_KEY",
+            authDomain: "ВАШ_AUTH_DOMAIN",
+            projectId: "ВАШ_PROJECT_ID",
+            storageBucket: "ВАШ_STORAGE_BUCKET",
+            messagingSenderId: "ВАШ_SENDER_ID",
+            appId: "ВАШ_APP_ID"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -41,50 +42,81 @@
     </header>
 
     <main>
+        <!-- БЛОК 1: КОНСТРУКТОР ОБЪЯВЛЕНИЙ -->
+        <section class="card">
+            <div class="card-header">
+                <h2>🛠 Конструктор объявлений</h2>
+            </div>
+            <div class="list-container builder-form">
+                <div class="input-group">
+                    <label>Ниша (категория):</label>
+                    <select id="niche-select" onchange="window.updateBuilderBlocks()"></select>
+                </div>
+
+                <div class="input-group">
+                    <label>Название объявления для Авито (макс. 50 символов):</label>
+                    <input type="text" id="ad-title" oninput="window.updateCounters()" placeholder="Например: Переварка порогов с лужением">
+                    <div class="char-counter"><span id="title-count">0</span> / 50</div>
+                </div>
+
+                <!-- Блоки выбора -->
+                <div id="block-selectors">
+                    <!-- Сюда будут рендериться селекты для блоков (Проблема, Что делаем и т.д.) -->
+                </div>
+
+                <div class="input-group">
+                    <label>Предпросмотр описания (макс. 3000 символов):</label>
+                    <textarea id="ad-preview" rows="10" readonly></textarea>
+                    <div class="char-counter"><span id="desc-count">0</span> / 3000</div>
+                </div>
+
+                <div class="input-group">
+                    <label>Комментарий (внутренний):</label>
+                    <input type="text" id="ad-comment" placeholder="Например: Залито на аккаунт Авито-1 24.10">
+                </div>
+
+                <button class="btn-add" onclick="window.saveAssembledAd()" style="width: 100%; margin-top: 10px;">💾 Сохранить готовое объявление</button>
+            </div>
+        </section>
+
+        <!-- БЛОК 2: АККАУНТЫ -->
         <section class="card">
             <div class="card-header">
                 <h2>👤 Аккаунты</h2>
                 <button class="btn-add">+ Добавить</button>
             </div>
-            <div id="accounts-list" class="list-container">
-                <p style="color: #888;">Здесь будут аккаунты</p>
-            </div>
+            <div id="accounts-list" class="list-container"></div>
         </section>
 
+        <!-- БЛОК 3: ГОТОВЫЕ ОБЪЯВЛЕНИЯ -->
         <section class="card">
             <div class="card-header">
-                <h2>📝 База текстов</h2>
-                <button class="btn-add">+ Добавить</button>
+                <h2>📦 Сохраненные объявления</h2>
             </div>
-            <div id="templates-list" class="list-container">
-                <p style="color: #888;">Здесь будут тексты</p>
-            </div>
+            <div id="templates-list" class="list-container"></div>
         </section>
 
+        <!-- БЛОК 4: МАТРИЦА -->
         <section class="card">
             <div class="card-header">
                 <h2>📊 Матрица размещений</h2>
             </div>
-            <div id="matrix-container" class="matrix-wrapper">
-                <!-- Сюда будет генерироваться таблица -->
-            </div>
+            <div id="matrix-container" class="matrix-wrapper"></div>
         </section>
     </main>
-        <!-- Модальное окно для добавления и редактирования -->
+
+    <!-- Модальное окно для Аккаунтов -->
     <dialog id="edit-modal">
         <form method="dialog">
             <h2 id="modal-title">Добавить</h2>
-            
-            <div id="field-1-group" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
+            <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
                 <label id="label-1" style="font-weight: 600; font-size: 0.9rem;">Название</label>
-                <input type="text" id="field-1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;">
+                <input type="text" id="field-1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
             </div>
-
-            <div id="field-2-group" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
-                <label id="label-2" style="font-weight: 600; font-size: 0.9rem;">Текст</label>
-                <textarea id="field-2" rows="12" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; resize: vertical;"></textarea>
+            <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
+                <label id="label-2" style="font-weight: 600; font-size: 0.9rem;">Площадка</label>
+                <textarea id="field-2" rows="1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;"></textarea>
             </div>
-
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" onclick="document.getElementById('edit-modal').close()" style="padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer;">Отмена</button>
                 <button type="button" onclick="window.saveModal()" style="padding: 10px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: bold;">Сохранить</button>
