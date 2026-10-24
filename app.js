@@ -1,23 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Проверяем, загрузился ли Firebase из index.html
     if (!window.db || !window.auth) {
         console.error("Firebase не загружен!");
         document.getElementById('sync-status').textContent = "Ошибка Firebase";
         return;
     }
 
-    // 1. Авторизация
     window.signInAnonymously(window.auth).then(() => {
-        console.log("Авторизация успешна");
         startSync();
     }).catch((error) => {
         console.error("Ошибка авторизации:", error);
         document.getElementById('sync-status').textContent = "Ошибка авторизации";
     });
 
-    let currentData = { accounts: [], templates: [] };
+    let currentData = { accounts: [], templates: [], placements: [] };
 
-    // 2. Синхронизация с Firestore
     function startSync() {
         const docRef = window.doc(window.db, "data/main");
         
@@ -28,58 +24,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = docSnap.data();
                 currentData = {
                     accounts: data.accounts || [],
-                    templates: data.templates || []
+                    templates: data.templates || [],
+                    placements: data.placements || [] // Новый массив для галочек
                 };
             } else {
-                // Если базы еще нет, создаем пустую
                 window.setDoc(docRef, currentData);
             }
             
-            // Обновляем статус (зеленый = синхронизировано)
             statusEl.textContent = "Синхронизировано";
             statusEl.style.color = "#10b981"; 
             
             renderAll();
         }, (error) => {
-            console.error("Ошибка синхронизации:", error);
             document.getElementById('sync-status').textContent = "Локально (нет сети)";
-            document.getElementById('sync-status').style.color = "#ef4444"; // Красный
+            document.getElementById('sync-status').style.color = "#ef4444";
         });
     }
 
-    // 3. Сохранение данных
     function saveData() {
         const docRef = window.doc(window.db, "data/main");
         window.setDoc(docRef, currentData, { merge: true }).then(() => {
-            console.log("Данные успешно сохранены в Firebase");
-        }).catch((err) => {
-            console.error("Ошибка сохранения:", err);
-            alert("Ошибка при сохранении. Проверьте интернет.");
-        });
+            console.log("Сохранено");
+        }).catch((err) => console.error("Ошибка:", err));
     }
 
-    // 4. Отрисовка интерфейса
     function renderAll() {
         renderAccounts();
         renderTemplates();
+        renderMatrix(); // Вызов отрисовки матрицы
     }
 
     function renderAccounts() {
         const container = document.getElementById('accounts-list');
         container.innerHTML = '';
-        
         if (currentData.accounts.length === 0) {
             container.innerHTML = '<p style="color: #888;">Здесь будут аккаунты</p>';
             return;
         }
-
         currentData.accounts.forEach(acc => {
             const div = document.createElement('div');
             div.className = 'item';
             div.innerHTML = `
                 <div class="item-info">
                     <h3>${acc.name}</h3>
-                    <p>Площадка: ${acc.platform || 'Не указана'}</p>
+                    <p>${acc.platform || 'Без площадки'}</p>
                 </div>
                 <div class="item-actions">
                     <button onclick="window.deleteAccount('${acc.id}')">❌</button>
@@ -92,62 +80,127 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTemplates() {
         const container = document.getElementById('templates-list');
         container.innerHTML = '';
-        
         if (currentData.templates.length === 0) {
             container.innerHTML = '<p style="color: #888;">Здесь будут тексты</p>';
             return;
         }
-
         currentData.templates.forEach(temp => {
             const div = document.createElement('div');
             div.className = 'item';
             div.innerHTML = `
                 <div class="item-info">
                     <h3>${temp.title}</h3>
-                    <p>${temp.description.substring(0, 60)}...</p>
+                    <p>${temp.description.substring(0, 40)}...</p>
                 </div>
                 <div class="item-actions">
-                    <button onclick="window.copyTemplate('${temp.id}')" title="Скопировать текст">📋</button>
-                    <button onclick="window.deleteTemplate('${temp.id}')" title="Удалить">❌</button>
+                    <button onclick="window.copyTemplate('${temp.id}')">📋</button>
+                    <button onclick="window.deleteTemplate('${temp.id}')">❌</button>
                 </div>
             `;
             container.appendChild(div);
         });
     }
 
-    // 5. Глобальные функции для кнопок
+    // --- ОТРИСОВКА МАТРИЦЫ ---
+    function renderMatrix() {
+        const container = document.getElementById('matrix-container');
+        container.innerHTML = '';
+
+        if (currentData.accounts.length === 0 || currentData.templates.length === 0) {
+            container.innerHTML = '<p style="color: #888;">Добавьте хотя бы один аккаунт и один текст, чтобы увидеть матрицу.</p>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'matrix-table';
+
+        // Шапка таблицы (Аккаунты)
+        const thead = document.createElement('thead');
+        let headerRow = '<tr><th>Текст \\ Аккаунт</th>';
+        currentData.accounts.forEach(acc => {
+            headerRow += `<th>${acc.name}</th>`;
+        });
+        headerRow += '</tr>';
+        thead.innerHTML = headerRow;
+        table.appendChild(thead);
+
+        // Тело таблицы (Шаблоны)
+        const tbody = document.createElement('tbody');
+        currentData.templates.forEach(temp => {
+            const tr = document.createElement('tr');
+            // Первая колонка - название текста
+            tr.innerHTML = `<td class="row-title">${temp.title}</td>`;
+
+            // Колонки с галочками
+            currentData.accounts.forEach(acc => {
+                // Ищем, есть ли размещение для этой пары (текст + аккаунт)
+                const isPlaced = currentData.placements.find(p => p.templateId === temp.id && p.accountId === acc.id);
+                const cell = document.createElement('td');
+                cell.className = 'matrix-cell';
+                cell.innerHTML = isPlaced ? '<span class="check">✅</span>' : '<span class="empty">—</span>';
+                
+                // Обработчик клика для установки/снятия галочки
+                cell.onclick = () => togglePlacement(temp.id, acc.id);
+                
+                tr.appendChild(cell);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
+    }
+
+    // --- ЛОГИКА ГАЛОЧЕК ---
+    window.togglePlacement = function(templateId, accountId) {
+        const existingIndex = currentData.placements.findIndex(
+            p => p.templateId === templateId && p.accountId === accountId
+        );
+
+        if (existingIndex > -1) {
+            // Если галочка есть - удаляем
+            currentData.placements.splice(existingIndex, 1);
+        } else {
+            // Если нет - добавляем
+            currentData.placements.push({
+                id: 'plc_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                templateId: templateId,
+                accountId: accountId,
+                date: new Date().toISOString()
+            });
+        }
+        saveData(); // Сохраняем изменения
+    };
+
+    // --- ФУНКЦИИ ДОБАВЛЕНИЯ/УДАЛЕНИЯ ---
     window.openForm = function(type) {
         if (type === 'account') {
-            const name = prompt("Название аккаунта (например, Авито Аккаунт 1):");
+            const name = prompt("Название аккаунта (например, Авито-1):");
             if (!name) return;
-            const platform = prompt("Площадка (Авито, Юла и т.д.):", "Авито");
-            
-            const newAccount = { id: 'acc_' + Date.now(), name, platform };
-            currentData.accounts.push(newAccount);
+            const platform = prompt("Площадка (Авито, Юла):", "Авито");
+            currentData.accounts.push({ id: 'acc_' + Date.now(), name, platform });
             saveData();
         }
-        
         if (type === 'template') {
             const title = prompt("Короткое название (например, Пороги - Вариант 1):");
             if (!title) return;
             const description = prompt("Вставьте сам текст объявления:");
             if (!description) return;
-            
-            const newTemplate = { id: 'temp_' + Date.now(), title, description };
-            currentData.templates.push(newTemplate);
+            currentData.templates.push({ id: 'temp_' + Date.now(), title, description });
             saveData();
         }
     };
 
     window.deleteAccount = function(id) {
-        if (!confirm("Удалить этот аккаунт?")) return;
+        if (!confirm("Удалить аккаунт? Все галочки этого аккаунта тоже удалятся.")) return;
         currentData.accounts = currentData.accounts.filter(a => a.id !== id);
+        currentData.placements = currentData.placements.filter(p => p.accountId !== id);
         saveData();
     };
 
     window.deleteTemplate = function(id) {
-        if (!confirm("Удалить этот текст?")) return;
+        if (!confirm("Удалить текст? Все галочки этого текста тоже удалятся.")) return;
         currentData.templates = currentData.templates.filter(t => t.id !== id);
+        currentData.placements = currentData.placements.filter(p => p.templateId !== id);
         saveData();
     };
 
@@ -155,14 +208,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const temp = currentData.templates.find(t => t.id === id);
         if (temp) {
             navigator.clipboard.writeText(temp.description).then(() => {
-                alert("Текст скопирован в буфер обмена! Можно вставлять на Авито.");
-            }).catch(err => {
-                console.error('Ошибка копирования: ', err);
+                alert("Текст скопирован! Можно вставлять.");
             });
         }
     };
 
-    // Привязка кнопок "+ Добавить" из HTML к нашим функциям
     document.querySelectorAll('.btn-add')[0].onclick = () => window.openForm('account');
     document.querySelectorAll('.btn-add')[1].onclick = () => window.openForm('template');
 });
