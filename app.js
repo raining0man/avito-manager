@@ -131,25 +131,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const nicheBlocks = currentData.blocks.niches[nicheKey];
         
         const blockConfig = [
-            { key: 'photo', label: '1. Фото', source: 'universal' },
-            { key: 'visit', label: '2. Осмотр', source: 'universal' },
-            { key: 'problem', label: '3. Проблема', source: 'niche' },
-            { key: 'process', label: '4. Что делаем', source: 'niche' },
-            { key: 'advantages', label: '5. Преимущества', source: 'niche' },
-            { key: 'cta', label: '6. Призыв', source: 'niche' },
-            { key: 'top_services', label: '7. Топ услуг', source: 'niche' },
-            { key: 'brands', label: '8. Марки', source: 'universal' },
-            { key: 'location', label: '9. Адрес', source: 'universal' }
+            { key: 'photo', name: 'Фото', source: 'universal' },
+            { key: 'visit', name: 'Осмотр', source: 'universal' },
+            { key: 'problem', name: 'Проблема', source: 'niche' },
+            { key: 'process', name: 'Что делаем', source: 'niche' },
+            { key: 'advantages', name: 'Полезность', source: 'niche' },
+            { key: 'cta', name: 'Призыв', source: 'niche' },
+            { key: 'top_services', name: 'Топ', source: 'niche' },
+            { key: 'brands', name: 'Марки', source: 'universal' },
+            { key: 'location', name: 'Адрес', source: 'universal' }
         ];
 
-        blockConfig.forEach(config => {
+        blockConfig.forEach((config, idx) => {
             const options = config.source === 'universal' ? currentData.blocks.universal[config.key] : nicheBlocks[config.key];
             
             if (options && options.length > 0) {
                 let selectHtml = `<div class="input-group">
-                    <label>${config.label}</label>
+                    <label>${idx + 1}. ${config.name}</label>
                     <div class="block-row">
-                        <select class="block-select" data-key="${config.key}" data-source="${config.source}" onchange="window.assemblePreview()">
+                        <select class="block-select" data-name="${config.name}" data-key="${config.key}" data-source="${config.source}" onchange="window.assemblePreview()">
                             <option value="">-- Не использовать --</option>`;
                 options.forEach((opt, index) => {
                     selectHtml += `<option value="${index}">Вариант ${index + 1}: ${opt.substring(0, 40)}...</option>`;
@@ -197,18 +197,37 @@ document.addEventListener('DOMContentLoaded', () => {
     window.saveAssembledAd = function() {
         const title = document.getElementById('ad-title').value.trim();
         const description = document.getElementById('ad-preview').value.trim();
-        const comment = document.getElementById('ad-comment').value.trim();
+        const manualComment = document.getElementById('ad-comment').value.trim();
         const nicheKey = document.getElementById('niche-select').value;
 
         if (!title) return alert("Введите название!");
         if (!description) return alert("Выберите блоки!");
         if (!nicheKey) return alert("Выберите нишу!");
 
+        // --- АВТОМАТИЧЕСКИЙ КОММЕНТАРИЙ ---
+        const selects = document.querySelectorAll('.block-select');
+        let autoCommentParts = [];
+        
+        selects.forEach((select, index) => {
+            const name = select.dataset.name;
+            const val = select.value;
+            if (val !== "") {
+                // Пользователю показываем вариант начиная с 1 (в базе индекс с 0)
+                autoCommentParts.push(`${index + 1}.${name}:${parseInt(val) + 1}`);
+            }
+        });
+
+        const autoComment = autoCommentParts.join(' / ');
+        // Объединяем ручной ввод и автокомментарий
+        const finalComment = manualComment 
+            ? `${manualComment} | Блоки: ${autoComment}` 
+            : `Блоки: ${autoComment}`;
+
         currentData.templates.push({ 
             id: 'temp_' + Date.now(), 
             title, 
             description, 
-            comment, 
+            comment: finalComment, // Сохраняем сформированный комментарий
             niche: nicheKey,
             status: 'active'
         });
@@ -222,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCounters();
     };
 
-    // --- РЕДАКТОР БЛОКОВ (ВКЛЮЧАЯ ОБЩИЕ) ---
+    // --- РЕДАКТОР БЛОКОВ ---
     window.renderEditorBlocks = function() {
         const nicheKey = document.getElementById('edit-niche-select').value;
         const container = document.getElementById('editor-container');
