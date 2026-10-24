@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentFilterVal = filterNiche.value;
         
         nicheSelect.innerHTML = '<option value="">-- Выберите нишу --</option>';
-        editNicheSelect.innerHTML = '<option value="">-- Выберите нишу --</option>';
+        editNicheSelect.innerHTML = '<option value="">-- Выберите --</option><option value="universal">⭐ Общее (все ниши)</option>';
         filterNiche.innerHTML = '<option value="">Все ниши</option>';
         
         for (const key in currentData.blocks.niches) {
@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filterNiche.value = currentFilterVal;
     }
 
+    // --- КОНСТРУКТОР ---
     window.updateBuilderBlocks = function() {
         const nicheKey = document.getElementById('niche-select').value;
         const container = document.getElementById('block-selectors');
@@ -163,36 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.assemblePreview();
     };
 
-    window.addNewTitle = function() {
-        const nicheKey = document.getElementById('niche-select').value;
-        if (!nicheKey) return alert("Сначала выберите нишу!");
-        
-        const newTitle = prompt("Введите новое название (до 50 символов):");
-        if (!newTitle || !newTitle.trim()) return;
-        if (newTitle.length > 50) return alert("Название слишком длинное (макс. 50 символов)!");
-
-        if (!currentData.blocks.niches[nicheKey].titles) currentData.blocks.niches[nicheKey].titles = [];
-        currentData.blocks.niches[nicheKey].titles.push(newTitle.trim());
-        
-        saveData();
-        window.updateBuilderBlocks();
-    };
-
-    window.addNewBlock = function(nicheKey, blockKey, source) {
-        const newText = prompt("Введите текст нового варианта для этого блока:");
-        if (!newText || !newText.trim()) return;
-
-        if (source === 'universal') {
-            if (!currentData.blocks.universal[blockKey]) currentData.blocks.universal[blockKey] = [];
-            currentData.blocks.universal[blockKey].push(newText.trim());
-        } else {
-            if (!currentData.blocks.niches[nicheKey][blockKey]) currentData.blocks.niches[nicheKey][blockKey] = [];
-            currentData.blocks.niches[nicheKey][blockKey].push(newText.trim());
-        }
-        saveData();
-        window.updateBuilderBlocks();
-    };
-
     window.assemblePreview = function() {
         const selects = document.querySelectorAll('.block-select');
         const parts = [];
@@ -210,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // НОВЫЙ РАЗДЕЛИТЕЛЬ: перенос строки, дефис-пробел-дефис-пробел-дефис, перенос строки
         document.getElementById('ad-preview').value = parts.join('\n- - -\n');
         window.updateCounters();
     };
@@ -252,6 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCounters();
     };
 
+    // --- РЕДАКТОР БЛОКОВ (ВКЛЮЧАЯ ОБЩИЕ) ---
     window.renderEditorBlocks = function() {
         const nicheKey = document.getElementById('edit-niche-select').value;
         const container = document.getElementById('editor-container');
@@ -259,31 +230,102 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!nicheKey) return;
 
-        let html = `<h4 style="margin: 10px 0 5px; font-size: 0.9rem;">Названия объявлений:</h4>`;
-        const titles = currentData.blocks.niches[nicheKey].titles || [];
-        titles.forEach((t, i) => {
-            html += `<div class="editor-block">
-                <p>${t}</p>
-                <button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', ${i})">✏️</button>
-                <button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', ${i})">❌</button>
-            </div>`;
-        });
+        let html = '';
 
-        const blockKeys = ['problem', 'process', 'advantages', 'cta', 'top_services'];
-        blockKeys.forEach(bKey => {
-            if (currentData.blocks.niches[nicheKey][bKey]) {
-                html += `<h4 style="margin: 15px 0 5px; font-size: 0.9rem;">Блок: ${bKey}</h4>`;
-                currentData.blocks.niches[nicheKey][bKey].forEach((text, i) => {
+        if (nicheKey === 'universal') {
+            const universalKeys = ['photo', 'visit', 'brands', 'location'];
+            const ruNames = {
+                photo: 'Просьба прислать фото', visit: 'Призыв приехать на осмотр',
+                brands: 'Марки авто', location: 'Адрес и контакты'
+            };
+            
+            universalKeys.forEach(bKey => {
+                const options = currentData.blocks.universal[bKey] || [];
+                html += `<h4 style="margin: 15px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
+                    ${ruNames[bKey]}
+                    <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewBlock('universal', '${bKey}', 'universal')">+</button>
+                </h4>`;
+                
+                options.forEach((text, i) => {
                     html += `<div class="editor-block">
                         <p>${text}</p>
-                        <button onclick="window.editBlock('${nicheKey}', '${bKey}', 'niche', ${i})">✏️</button>
-                        <button onclick="window.deleteBlock('${nicheKey}', '${bKey}', 'niche', ${i})">❌</button>
+                        <button onclick="window.editBlock('universal', '${bKey}', 'universal', ${i})">✏️</button>
+                        <button onclick="window.deleteBlock('universal', '${bKey}', 'universal', ${i})">❌</button>
                     </div>`;
                 });
-            }
-        });
+            });
+        } else {
+            html += `<h4 style="margin: 10px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
+                Названия объявлений:
+                <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewTitle('${nicheKey}')">+</button>
+            </h4>`;
+            const titles = currentData.blocks.niches[nicheKey].titles || [];
+            titles.forEach((t, i) => {
+                html += `<div class="editor-block">
+                    <p>${t}</p>
+                    <button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', ${i})">✏️</button>
+                    <button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', ${i})">❌</button>
+                </div>`;
+            });
+
+            const blockKeys = ['problem', 'process', 'advantages', 'cta', 'top_services'];
+            const blockNames = {
+                problem: 'Описание проблемы', process: 'Что делаем', 
+                advantages: 'Преимущества', cta: 'Призыв', 
+                top_services: 'Топ услуг'
+            };
+            
+            blockKeys.forEach(bKey => {
+                if (currentData.blocks.niches[nicheKey][bKey]) {
+                    html += `<h4 style="margin: 15px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
+                        ${blockNames[bKey]}
+                        <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewBlock('${nicheKey}', '${bKey}', 'niche')">+</button>
+                    </h4>`;
+                    currentData.blocks.niches[nicheKey][bKey].forEach((text, i) => {
+                        html += `<div class="editor-block">
+                            <p>${text}</p>
+                            <button onclick="window.editBlock('${nicheKey}', '${bKey}', 'niche', ${i})">✏️</button>
+                            <button onclick="window.deleteBlock('${nicheKey}', '${bKey}', 'niche', ${i})">❌</button>
+                        </div>`;
+                    });
+                }
+            });
+        }
         
         container.innerHTML = html;
+    };
+
+    // --- ФУНКЦИИ ДОБАВЛЕНИЯ / РЕДАКТИРОВАНИЯ ---
+    window.addNewTitle = function(forcedNicheKey) {
+        const nicheKey = forcedNicheKey || document.getElementById('niche-select').value;
+        if (!nicheKey || nicheKey === 'universal') return alert("Сначала выберите конкретную нишу!");
+        
+        const newTitle = prompt("Введите новое название (до 50 символов):");
+        if (!newTitle || !newTitle.trim()) return;
+        if (newTitle.length > 50) return alert("Название слишком длинное (макс. 50 символов)!");
+
+        if (!currentData.blocks.niches[nicheKey].titles) currentData.blocks.niches[nicheKey].titles = [];
+        currentData.blocks.niches[nicheKey].titles.push(newTitle.trim());
+        
+        saveData();
+        window.updateBuilderBlocks();
+        window.renderEditorBlocks();
+    };
+
+    window.addNewBlock = function(nicheKey, blockKey, source) {
+        const newText = prompt("Введите текст нового варианта для этого блока:");
+        if (!newText || !newText.trim()) return;
+
+        if (source === 'universal') {
+            if (!currentData.blocks.universal[blockKey]) currentData.blocks.universal[blockKey] = [];
+            currentData.blocks.universal[blockKey].push(newText.trim());
+        } else {
+            if (!currentData.blocks.niches[nicheKey][blockKey]) currentData.blocks.niches[nicheKey][blockKey] = [];
+            currentData.blocks.niches[nicheKey][blockKey].push(newText.trim());
+        }
+        saveData();
+        window.updateBuilderBlocks();
+        window.renderEditorBlocks();
     };
 
     window.editBlock = function(nicheKey, blockKey, source, index) {
@@ -314,6 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
             currentData.blocks.niches[nicheKey][blockKey].splice(index, 1);
         }
         saveData();
+        window.updateBuilderBlocks();
+        window.renderEditorBlocks();
     };
 
     window.editAccount = function(id) {
@@ -369,6 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveData();
         modal.close();
+        window.updateBuilderBlocks();
+        window.renderEditorBlocks();
     };
 
     window.addAccount = function() {
