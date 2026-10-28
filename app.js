@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 currentData.blocks = JSON.parse(JSON.stringify(initialBlocks));
-                window.setDoc(docRef, currentData);
+                saveData();
             }
             statusEl.textContent = "Синхронизировано";
             statusEl.style.color = "#10b981";
@@ -77,7 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveData() {
         const docRef = window.doc(window.db, "data/main");
-        window.setDoc(docRef, currentData, { merge: true });
+        window.setDoc(docRef, currentData, { merge: true })
+        .then(() => {
+            console.log("Данные успешно сохранены в Firebase");
+        })
+        .catch((error) => {
+            console.error("ОШИБКА СОХРАНЕНИЯ:", error);
+            alert("Внимание! Данные не сохранились в базу. Проверьте интернет или правила Firebase. Изменения пропадут после перезагрузки страницы.");
+        });
     }
 
     function renderAll() {
@@ -108,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         filterNiche.value = currentFilterVal;
     }
 
-    // --- КОНСТРУКТОР ---
     window.updateBuilderBlocks = function() {
         const nicheKey = document.getElementById('niche-select').value;
         const container = document.getElementById('block-selectors');
@@ -204,7 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!description) return alert("Выберите блоки!");
         if (!nicheKey) return alert("Выберите нишу!");
 
-        // --- АВТОМАТИЧЕСКИЙ КОММЕНТАРИЙ ---
         const selects = document.querySelectorAll('.block-select');
         let autoCommentParts = [];
         
@@ -212,13 +217,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = select.dataset.name;
             const val = select.value;
             if (val !== "") {
-                // Пользователю показываем вариант начиная с 1 (в базе индекс с 0)
                 autoCommentParts.push(`${index + 1}.${name}:${parseInt(val) + 1}`);
             }
         });
 
         const autoComment = autoCommentParts.join(' / ');
-        // Объединяем ручной ввод и автокомментарий
         const finalComment = manualComment 
             ? `${manualComment} | Блоки: ${autoComment}` 
             : `Блоки: ${autoComment}`;
@@ -227,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: 'temp_' + Date.now(), 
             title, 
             description, 
-            comment: finalComment, // Сохраняем сформированный комментарий
+            comment: finalComment,
             niche: nicheKey,
             status: 'active'
         });
@@ -241,7 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCounters();
     };
 
-    // --- РЕДАКТОР БЛОКОВ ---
     window.renderEditorBlocks = function() {
         const nicheKey = document.getElementById('edit-niche-select').value;
         const container = document.getElementById('editor-container');
@@ -314,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = html;
     };
 
-    // --- ФУНКЦИИ ДОБАВЛЕНИЯ / РЕДАКТИРОВАНИЯ ---
     window.addNewTitle = function(forcedNicheKey) {
         const nicheKey = forcedNicheKey || document.getElementById('niche-select').value;
         if (!nicheKey || nicheKey === 'universal') return alert("Сначала выберите конкретную нишу!");
