@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusEl.style.color = "#ef4444";
     });
 
-    // ПОЛНОСТЬЮ ПУСТАЯ БАЗА (только названия ниш для структуры)
+    // ПУСТАЯ БАЗА
     const initialBlocks = {
         universal: {
             photo: [],
@@ -26,26 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
             brands: [],
             location: []
         },
-        niches: {
-            "thresholds": {
-                name: "Кузовной ремонт / Переварка порогов",
-                titles: [],
-                problem: [],
-                process: [],
-                advantages: [],
-                top_services: [],
-                cta: []
-            },
-            "painting": {
-                name: "Малярные работы / Покраска",
-                titles: [],
-                problem: [],
-                process: [],
-                advantages: [],
-                top_services: [],
-                cta: []
-            }
-        }
+        niches: {} // Полностью пустой объект, ниши создаем вручную
     };
 
     let currentData = { accounts: [], templates: [], placements: [], blocks: {} };
@@ -63,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     blocks: data.blocks || {}
                 };
                 
+                // Если в базе еще нет структуры blocks (например, старый бэкап), инициализируем
                 if (!currentData.blocks.universal || !currentData.blocks.niches) {
                     currentData.blocks = JSON.parse(JSON.stringify(initialBlocks));
                     saveData();
@@ -125,6 +107,28 @@ document.addEventListener('DOMContentLoaded', () => {
         filterNiche.value = currentFilterVal;
     }
 
+    // --- СОЗДАНИЕ НОВОЙ НИШИ ---
+    window.createNiche = function() {
+        const name = prompt("Введите название новой ниши (например, Ремонт двигателя):");
+        if (!name || !name.trim()) return;
+        
+        const key = 'niche_' + Date.now();
+        currentData.blocks.niches[key] = {
+            name: name.trim(),
+            titles: [],
+            problem: [],
+            process: [],
+            advantages: [],
+            cta: [],
+            top_services: []
+        };
+        
+        saveData();
+        initSelectors();
+        document.getElementById('edit-niche-select').value = key;
+        window.renderEditorBlocks();
+    };
+
     window.generateRandomAd = function() {
         const nicheKey = document.getElementById('niche-select').value;
         if (!nicheKey) return alert("Сначала выберите нишу для подбора!");
@@ -157,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'location', source: 'universal' }
         ];
 
-        // Проверяем, что все нужные блоки заполнены
         const availableLengths = blockConfig.map(cfg => {
             const arr = cfg.source === 'universal' ? currentData.blocks.universal[cfg.key] : nicheBlocks[cfg.key];
             return arr ? arr.length : 0; 
@@ -255,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div></div>`;
                 container.innerHTML += selectHtml;
             } else {
-                // Если блоков нет вообще, выводим строку с плюсом, чтобы можно было добавить
                 let selectHtml = `<div class="input-group">
                     <label>${idx + 1}. ${config.name} (пусто)</label>
                     <div class="block-row">
@@ -369,40 +371,47 @@ document.addEventListener('DOMContentLoaded', () => {
             
             universalKeys.forEach(bKey => {
                 const options = currentData.blocks.universal[bKey] || [];
-                html += `<h4 style="margin: 15px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
-                    ${ruNames[bKey]}
-                    <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewBlock('universal', '${bKey}', 'universal')">+</button>
-                </h4>`;
+                // Используем details для сворачивания
+                html += `<details class="block-group">
+                    <summary>${ruNames[bKey]} <span class="block-count">(${options.length})</span></summary>
+                    <div class="block-content">
+                        <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewBlock('universal', '${bKey}', 'universal')">+ Добавить вариант</button>`;
                 
                 if (options.length === 0) {
-                    html += `<p style="font-size: 0.85rem; color: #888; margin-bottom: 10px;">Пока пусто. Нажмите "+", чтобы добавить.</p>`;
+                    html += `<p style="font-size: 0.85rem; color: #888; text-align: center;">Пока пусто.</p>`;
                 } else {
                     options.forEach((text, i) => {
                         html += `<div class="editor-block">
                             <p>${text}</p>
-                            <button onclick="window.editBlock('universal', '${bKey}', 'universal', ${i})">✏️</button>
-                            <button onclick="window.deleteBlock('universal', '${bKey}', 'universal', ${i})">❌</button>
+                            <div style="display:flex;">
+                                <button onclick="window.editBlock('universal', '${bKey}', 'universal', ${i})">✏️</button>
+                                <button onclick="window.deleteBlock('universal', '${bKey}', 'universal', ${i})">❌</button>
+                            </div>
                         </div>`;
                     });
                 }
+                html += `</div></details>`;
             });
         } else {
-            html += `<h4 style="margin: 10px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
-                Названия объявлений:
-                <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewTitle('${nicheKey}')">+</button>
-            </h4>`;
             const titles = currentData.blocks.niches[nicheKey].titles || [];
+            html += `<details class="block-group">
+                <summary>Названия объявлений <span class="block-count">(${titles.length})</span></summary>
+                <div class="block-content">
+                    <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewTitle('${nicheKey}')">+ Добавить название</button>`;
             if (titles.length === 0) {
-                html += `<p style="font-size: 0.85rem; color: #888; margin-bottom: 10px;">Пока пусто. Нажмите "+", чтобы добавить.</p>`;
+                html += `<p style="font-size: 0.85rem; color: #888; text-align: center;">Пока пусто.</p>`;
             } else {
                 titles.forEach((t, i) => {
                     html += `<div class="editor-block">
                         <p>${t}</p>
-                        <button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', ${i})">✏️</button>
-                        <button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', ${i})">❌</button>
+                        <div style="display:flex;">
+                            <button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', ${i})">✏️</button>
+                            <button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', ${i})">❌</button>
+                        </div>
                     </div>`;
                 });
             }
+            html += `</div></details>`;
 
             const blockKeys = ['problem', 'process', 'advantages', 'cta', 'top_services'];
             const blockNames = {
@@ -413,22 +422,26 @@ document.addEventListener('DOMContentLoaded', () => {
             
             blockKeys.forEach(bKey => {
                 const options = currentData.blocks.niches[nicheKey][bKey] || [];
-                html += `<h4 style="margin: 15px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
-                    ${blockNames[bKey]}
-                    <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewBlock('${nicheKey}', '${bKey}', 'niche')">+</button>
-                </h4>`;
+                // Используем details для сворачивания
+                html += `<details class="block-group">
+                    <summary>${blockNames[bKey]} <span class="block-count">(${options.length})</span></summary>
+                    <div class="block-content">
+                        <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewBlock('${nicheKey}', '${bKey}', 'niche')">+ Добавить вариант</button>`;
                 
                 if (options.length === 0) {
-                    html += `<p style="font-size: 0.85rem; color: #888; margin-bottom: 10px;">Пока пусто. Нажмите "+", чтобы добавить.</p>`;
+                    html += `<p style="font-size: 0.85rem; color: #888; text-align: center;">Пока пусто.</p>`;
                 } else {
                     options.forEach((text, i) => {
                         html += `<div class="editor-block">
                             <p>${text}</p>
-                            <button onclick="window.editBlock('${nicheKey}', '${bKey}', 'niche', ${i})">✏️</button>
-                            <button onclick="window.deleteBlock('${nicheKey}', '${bKey}', 'niche', ${i})">❌</button>
+                            <div style="display:flex;">
+                                <button onclick="window.editBlock('${nicheKey}', '${bKey}', 'niche', ${i})">✏️</button>
+                                <button onclick="window.deleteBlock('${nicheKey}', '${bKey}', 'niche', ${i})">❌</button>
+                            </div>
                         </div>`;
                     });
                 }
+                html += `</div></details>`;
             });
         }
         
