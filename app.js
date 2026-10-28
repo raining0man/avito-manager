@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startSync() {
         const docRef = window.doc(window.db, "data/main");
+        
+        // ОБРАБОТКА ОШИБОК СЕТИ ПРИ СИНХРОНИЗАЦИИ
         window.onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
@@ -72,6 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
             statusEl.textContent = "Синхронизировано";
             statusEl.style.color = "#10b981";
             renderAll();
+        }, (error) => {
+            console.error("Ошибка синхронизации Firebase:", error);
+            statusEl.textContent = "Ошибка сети";
+            statusEl.style.color = "#ef4444";
+            // Не роняем приложение, просто выводим статус
         });
     }
 
@@ -83,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch((error) => {
             console.error("ОШИБКА СОХРАНЕНИЯ:", error);
-            alert("Внимание! Данные не сохранились в базу. Проверьте интернет или правила Firebase. Изменения пропадут после перезагрузки страницы.");
+            alert("Внимание! Данные не сохранились. Проверьте интернет.");
         });
     }
 
@@ -91,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initSelectors();
         renderAccounts();
         renderTemplates();
-        window.renderEditorBlocks(); // Не закрываем вкладку
+        window.renderEditorBlocks();
     }
 
     function initSelectors() {
@@ -99,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const editNicheSelect = document.getElementById('edit-niche-select');
         const filterNiche = document.getElementById('filter-niche');
         
-        // СОХРАНЯЕМ ТЕКУЩИЕ ЗНАЧЕНИЯ
         const currentNicheVal = nicheSelect.value;
         const currentEditNicheVal = editNicheSelect.value;
         const currentFilterVal = filterNiche.value;
@@ -115,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
             filterNiche.innerHTML += `<option value="${key}">${name}</option>`;
         }
 
-        // ВОССТАНАВЛИВАЕМ ЗНАЧЕНИЯ
         nicheSelect.value = currentNicheVal;
         editNicheSelect.value = currentEditNicheVal;
         filterNiche.value = currentFilterVal;
@@ -126,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('block-selectors');
         const titleSelect = document.getElementById('title-select');
         
-        // СОХРАНЯЕМ ВЫБРАННЫЕ БЛОКИ
         const currentTitleVal = titleSelect.value;
         const blockSelections = {};
         document.querySelectorAll('.block-select').forEach(s => {
@@ -181,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // ВОССТАНАВЛИВАЕМ ВЫБРАННЫЕ БЛОКИ
         document.querySelectorAll('.block-select').forEach(s => {
             if (blockSelections[s.dataset.key] !== undefined) {
                 s.value = blockSelections[s.dataset.key];
@@ -455,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
         modal.close();
         window.updateBuilderBlocks();
-        window.renderEditorBlocks(); // Вкладка остается открытой на выбранной нише
+        window.renderEditorBlocks();
     };
 
     window.addAccount = function() {
