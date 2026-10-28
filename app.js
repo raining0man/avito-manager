@@ -1,3 +1,6 @@
+// Глобальный объект для хранения состояния открытых аккордеонов
+window.accordionStates = {};
+
 document.addEventListener('DOMContentLoaded', () => {
     const statusEl = document.getElementById('sync-status');
     
@@ -44,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     blocks: data.blocks || {}
                 };
                 
-                // Если в базе еще нет структуры blocks (например, старый бэкап), инициализируем
                 if (!currentData.blocks.universal || !currentData.blocks.niches) {
                     currentData.blocks = JSON.parse(JSON.stringify(initialBlocks));
                     saveData();
@@ -107,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
         filterNiche.value = currentFilterVal;
     }
 
-    // --- СОЗДАНИЕ НОВОЙ НИШИ ---
     window.createNiche = function() {
         const name = prompt("Введите название новой ниши (например, Ремонт двигателя):");
         if (!name || !name.trim()) return;
@@ -167,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (availableLengths.includes(0)) {
-            return alert("Ошибка! В некоторых блоках нет ни одного варианта. Заполните все блоки (Фото, Осмотр, Проблема и т.д.) перед использованием рандомайзера.");
+            return alert("Ошибка! В некоторых блоках нет ни одного варианта. Заполните все блоки перед использованием рандомайзера.");
         }
 
         let found = false;
@@ -353,6 +354,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCounters();
     };
 
+    // --- СОХРАНЕНИЕ СОСТОЯНИЯ АККОРДЕОНОВ ---
+    window.toggleAccordion = function(detailsEl) {
+        const id = detailsEl.getAttribute('data-id');
+        if (id) {
+            window.accordionStates[id] = detailsEl.open;
+        }
+    };
+
     window.renderEditorBlocks = function() {
         const nicheKey = document.getElementById('edit-niche-select').value;
         const container = document.getElementById('editor-container');
@@ -371,8 +380,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             universalKeys.forEach(bKey => {
                 const options = currentData.blocks.universal[bKey] || [];
-                // Используем details для сворачивания
-                html += `<details class="block-group">
+                const accId = `universal_${bKey}`;
+                const isOpen = window.accordionStates[accId] ? 'open' : ''; // Проверяем состояние
+                
+                html += `<details class="block-group" data-id="${accId}" ${isOpen} ontoggle="window.toggleAccordion(this)">
                     <summary>${ruNames[bKey]} <span class="block-count">(${options.length})</span></summary>
                     <div class="block-content">
                         <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewBlock('universal', '${bKey}', 'universal')">+ Добавить вариант</button>`;
@@ -394,7 +405,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const titles = currentData.blocks.niches[nicheKey].titles || [];
-            html += `<details class="block-group">
+            const accTitleId = `${nicheKey}_titles`;
+            const isTitleOpen = window.accordionStates[accTitleId] ? 'open' : '';
+            
+            html += `<details class="block-group" data-id="${accTitleId}" ${isTitleOpen} ontoggle="window.toggleAccordion(this)">
                 <summary>Названия объявлений <span class="block-count">(${titles.length})</span></summary>
                 <div class="block-content">
                     <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewTitle('${nicheKey}')">+ Добавить название</button>`;
@@ -422,8 +436,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             blockKeys.forEach(bKey => {
                 const options = currentData.blocks.niches[nicheKey][bKey] || [];
-                // Используем details для сворачивания
-                html += `<details class="block-group">
+                const accId = `${nicheKey}_${bKey}`;
+                const isOpen = window.accordionStates[accId] ? 'open' : '';
+                
+                html += `<details class="block-group" data-id="${accId}" ${isOpen} ontoggle="window.toggleAccordion(this)">
                     <summary>${blockNames[bKey]} <span class="block-count">(${options.length})</span></summary>
                     <div class="block-content">
                         <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewBlock('${nicheKey}', '${bKey}', 'niche')">+ Добавить вариант</button>`;
