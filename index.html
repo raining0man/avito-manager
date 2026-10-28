@@ -52,7 +52,10 @@
             <div class="list-container builder-form">
                 <div class="input-group">
                     <label>Ниша (категория):</label>
-                    <select id="niche-select" onchange="window.updateBuilderBlocks()"></select>
+                    <div class="block-row">
+                        <select id="niche-select" onchange="window.updateBuilderBlocks()"></select>
+                        <button class="btn-add" style="background: #8b5cf6; padding: 10px;" onclick="window.generateRandomAd()" title="Подобрать уникальную комбинацию">🎲 Рандом</button>
+                    </div>
                 </div>
 
                 <div class="input-group">
@@ -85,8 +88,9 @@
         </section>
 
         <section class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                 <h2>🗂 Управление контентом</h2>
+                <button class="btn-add" onclick="window.createNiche()" style="background: #10b981;">+ Создать нишу</button>
             </div>
             <div class="list-container builder-form">
                 <div class="input-group">
@@ -105,7 +109,6 @@
             <div id="accounts-list" class="list-container"></div>
         </section>
 
-        <!-- БЛОК ОБЪЯВЛЕНИЙ С ФИЛЬТРАМИ -->
         <section class="card">
             <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                 <h2>📦 Сохраненные объявления</h2>
@@ -120,7 +123,6 @@
         </section>
     </main>
 
-    <!-- Окно для текстов и названий -->
     <dialog id="edit-modal">
         <form method="dialog">
             <h2 id="modal-title">Редактировать</h2>
@@ -139,7 +141,6 @@
         </form>
     </dialog>
 
-    <!-- Окно для привязки аккаунтов -->
     <dialog id="accounts-modal">
         <form method="dialog">
             <h2>Привязать к аккаунтам</h2>
