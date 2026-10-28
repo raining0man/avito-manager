@@ -18,31 +18,32 @@ document.addEventListener('DOMContentLoaded', () => {
         statusEl.style.color = "#ef4444";
     });
 
+    // ПОЛНОСТЬЮ ПУСТАЯ БАЗА (только названия ниш для структуры)
     const initialBlocks = {
         universal: {
-            photo: ["Просьба - присылайте фото авто целиком и фото поврежденного участка на удалении и вблизи. Если причиной поломки было ДТП, кратко изложите подробности.", "Для точной оценки скиньте общий вид машины и сам дефект (издалека и крупным планом)."],
-            visit: ["А лучше приезжайте на бесплатный осмотр! Покажем фронт работ и проконсультируем.", "Запишитесь на бесплатный осмотр. Мастер всё проверит, а вы уже решите."],
-            brands: ["Работаем с авто: Lada, УАЗ, ГАЗ, Toyota, Nissan, VW, BMW, Mercedes, Audi, Mazda, Kia, Hyundai.", "Обслуживаем все популярные марки: BMW, Mercedes-Benz, Audi, Toyota, Kia, Hyundai, Skoda, Lada."],
-            location: ["📍 Находимся в 5 минутах от м. Старая Деревня.\nНапишите или позвоните — забронируем место.", "📍 Мы в 5 минутах от м. Старая Деревня.\nОставьте сообщение — ответим и предложим время."]
+            photo: [],
+            visit: [],
+            brands: [],
+            location: []
         },
         niches: {
             "thresholds": {
                 name: "Кузовной ремонт / Переварка порогов",
-                titles: ["Переварка порогов с лужением", "Сварка порогов с антикором", "Качественный ремонт порогов"],
-                problem: ["Хотите забыть о ржавчине навсегда? Используем лужение оловом. Гарантия 12 месяцев.", "Сквозная ржавчина на порогах? Пора варить. Сделаем четко, с гарантией 12 месяцев."],
-                process: ["🔧 Что делаем:\n— Демонтаж навесных\n— Изготовление ремвставок\n— Вырезка коррозии\n— Сварка\n— Антикор\n— Лужение оловом\n— Покраска", "Этапы:\n— Подготовка кузова\n— Вырезка гнили\n— Сварка\n— Зачистка швов\n— Антикор\n— Покраска"],
-                advantages: ["💡 Почему мы:\n— Лужение оловом — 100% защита\n— Бесплатный осмотр\n— Полный цикл в одном месте", "Наши плюсы:\n— Свои ремвставки вместо «заплаток»\n— Антикор со всех сторон\n— Один сервис на все"],
-                top_services: ["🛠 Топ услуг:\n— Переварка 1 или 2 порогов\n— Лужение оловом\n— Переварка арок\n— Переварка стаканов", "Что можем:\n— Полная переварка\n— Сварка с антикором\n— Косметика без сварки\n— Арки и стаканы"],
-                cta: ["Напишите — забронируем место в очереди.", "Оставьте заявку — назовём точную стоимость."]
+                titles: [],
+                problem: [],
+                process: [],
+                advantages: [],
+                top_services: [],
+                cta: []
             },
             "painting": {
                 name: "Малярные работы / Покраска",
-                titles: ["Покраска авто в камере", "Локальная покраска элемента", "Подбор цвета и покраска"],
-                problem: ["Царапины, сколы или выгоревшая краска? Вернём заводской вид. Гарантия 12 месяцев.", "Хотите обновить вид авто? Выполним покраску с идеальным подбором цвета."],
-                process: ["🔧 Что входит:\n— Подготовка поверхности\n— Грунт и шпатлёвка\n— Подбор цвета\n— Покраска в камере\n— Лакировка и полировка", "Этапы:\n— Мойка и оценка\n— Шлифовка\n— Грунтование\n— Подбор цвета\n— Покраска\n— Полировка"],
-                advantages: ["💡 Чем полезны:\n— Своя камера — идеальное покрытие\n— Подбор по спектрофотометру\n— Пробный образец до покраски", "Наши плюсы:\n— Любые марки\n— Качественные материалы\n— Гарантия на ЛКП"],
-                top_services: ["🛠 Топ услуг:\n— Покраска элемента\n— Локальная покраска\n— Покраска переходом\n— Полировка", "Что красим:\n— Крылья, двери, бамперы\n— Локальные участки\n— Пластик\n— Полировка"],
-                cta: ["Скиньте фото в чат — сориентируем по цене.", "Позвоните — подберём время для визита."]
+                titles: [],
+                problem: [],
+                process: [],
+                advantages: [],
+                top_services: [],
+                cta: []
             }
         }
     };
@@ -52,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function startSync() {
         const docRef = window.doc(window.db, "data/main");
         
-        // ОБРАБОТКА ОШИБОК СЕТИ ПРИ СИНХРОНИЗАЦИИ
         window.onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
@@ -78,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Ошибка синхронизации Firebase:", error);
             statusEl.textContent = "Ошибка сети";
             statusEl.style.color = "#ef4444";
-            // Не роняем приложение, просто выводим статус
         });
     }
 
@@ -125,6 +124,79 @@ document.addEventListener('DOMContentLoaded', () => {
         editNicheSelect.value = currentEditNicheVal;
         filterNiche.value = currentFilterVal;
     }
+
+    window.generateRandomAd = function() {
+        const nicheKey = document.getElementById('niche-select').value;
+        if (!nicheKey) return alert("Сначала выберите нишу для подбора!");
+
+        const existingTemplates = currentData.templates.filter(t => t.niche === nicheKey && t.status === 'active');
+        
+        let usedCombinations = [];
+        existingTemplates.forEach(t => {
+            if (t.comment) {
+                const matches = t.comment.match(/:\d+/g);
+                if (matches) {
+                    const indices = matches.map(m => parseInt(m.slice(1)));
+                    if (indices.length === 9) {
+                        usedCombinations.push(indices.join('-'));
+                    }
+                }
+            }
+        });
+
+        const nicheBlocks = currentData.blocks.niches[nicheKey];
+        const blockConfig = [
+            { key: 'photo', source: 'universal' },
+            { key: 'visit', source: 'universal' },
+            { key: 'problem', source: 'niche' },
+            { key: 'process', source: 'niche' },
+            { key: 'advantages', source: 'niche' },
+            { key: 'cta', source: 'niche' },
+            { key: 'top_services', source: 'niche' },
+            { key: 'brands', source: 'universal' },
+            { key: 'location', source: 'universal' }
+        ];
+
+        // Проверяем, что все нужные блоки заполнены
+        const availableLengths = blockConfig.map(cfg => {
+            const arr = cfg.source === 'universal' ? currentData.blocks.universal[cfg.key] : nicheBlocks[cfg.key];
+            return arr ? arr.length : 0; 
+        });
+
+        if (availableLengths.includes(0)) {
+            return alert("Ошибка! В некоторых блоках нет ни одного варианта. Заполните все блоки (Фото, Осмотр, Проблема и т.д.) перед использованием рандомайзера.");
+        }
+
+        let found = false;
+        let randomIndices = [];
+        let attempts = 0;
+
+        while (!found && attempts < 1000) {
+            randomIndices = availableLengths.map(len => Math.floor(Math.random() * len));
+            const comboString = randomIndices.join('-');
+            
+            if (!usedCombinations.includes(comboString)) {
+                found = true;
+            }
+            attempts++;
+        }
+
+        if (!found) {
+            return alert("Все возможные уникальные комбинации для этой ниши уже исчерпаны! Добавьте новые варианты блоков.");
+        }
+
+        window.updateBuilderBlocks();
+        
+        const selects = document.querySelectorAll('.block-select');
+        selects.forEach((select, idx) => {
+            if (randomIndices[idx] !== undefined) {
+                select.value = randomIndices[idx];
+            }
+        });
+
+        window.assemblePreview();
+        document.getElementById('ad-preview').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
 
     window.updateBuilderBlocks = function() {
         const nicheKey = document.getElementById('niche-select').value;
@@ -182,6 +254,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn-plus" onclick="window.addNewBlock('${nicheKey}', '${config.key}', '${config.source}')" title="Добавить новый вариант">+</button>
                     </div></div>`;
                 container.innerHTML += selectHtml;
+            } else {
+                // Если блоков нет вообще, выводим строку с плюсом, чтобы можно было добавить
+                let selectHtml = `<div class="input-group">
+                    <label>${idx + 1}. ${config.name} (пусто)</label>
+                    <div class="block-row">
+                        <select class="block-select" data-name="${config.name}" data-key="${config.key}" data-source="${config.source}" onchange="window.assemblePreview()" disabled>
+                            <option value="">-- Нет вариантов --</option>
+                        </select>
+                        <button class="btn-plus" onclick="window.addNewBlock('${nicheKey}', '${config.key}', '${config.source}')" title="Добавить новый вариант">+</button>
+                    </div></div>`;
+                container.innerHTML += selectHtml;
             }
         });
 
@@ -207,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const text = source === 'universal' 
                     ? currentData.blocks.universal[key][index] 
                     : currentData.blocks.niches[nicheKey][key][index];
-                parts.push(text);
+                if (text) parts.push(text);
             }
         });
 
@@ -291,13 +374,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewBlock('universal', '${bKey}', 'universal')">+</button>
                 </h4>`;
                 
-                options.forEach((text, i) => {
-                    html += `<div class="editor-block">
-                        <p>${text}</p>
-                        <button onclick="window.editBlock('universal', '${bKey}', 'universal', ${i})">✏️</button>
-                        <button onclick="window.deleteBlock('universal', '${bKey}', 'universal', ${i})">❌</button>
-                    </div>`;
-                });
+                if (options.length === 0) {
+                    html += `<p style="font-size: 0.85rem; color: #888; margin-bottom: 10px;">Пока пусто. Нажмите "+", чтобы добавить.</p>`;
+                } else {
+                    options.forEach((text, i) => {
+                        html += `<div class="editor-block">
+                            <p>${text}</p>
+                            <button onclick="window.editBlock('universal', '${bKey}', 'universal', ${i})">✏️</button>
+                            <button onclick="window.deleteBlock('universal', '${bKey}', 'universal', ${i})">❌</button>
+                        </div>`;
+                    });
+                }
             });
         } else {
             html += `<h4 style="margin: 10px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
@@ -305,13 +392,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewTitle('${nicheKey}')">+</button>
             </h4>`;
             const titles = currentData.blocks.niches[nicheKey].titles || [];
-            titles.forEach((t, i) => {
-                html += `<div class="editor-block">
-                    <p>${t}</p>
-                    <button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', ${i})">✏️</button>
-                    <button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', ${i})">❌</button>
-                </div>`;
-            });
+            if (titles.length === 0) {
+                html += `<p style="font-size: 0.85rem; color: #888; margin-bottom: 10px;">Пока пусто. Нажмите "+", чтобы добавить.</p>`;
+            } else {
+                titles.forEach((t, i) => {
+                    html += `<div class="editor-block">
+                        <p>${t}</p>
+                        <button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', ${i})">✏️</button>
+                        <button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', ${i})">❌</button>
+                    </div>`;
+                });
+            }
 
             const blockKeys = ['problem', 'process', 'advantages', 'cta', 'top_services'];
             const blockNames = {
@@ -321,12 +412,16 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             blockKeys.forEach(bKey => {
-                if (currentData.blocks.niches[nicheKey][bKey]) {
-                    html += `<h4 style="margin: 15px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
-                        ${blockNames[bKey]}
-                        <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewBlock('${nicheKey}', '${bKey}', 'niche')">+</button>
-                    </h4>`;
-                    currentData.blocks.niches[nicheKey][bKey].forEach((text, i) => {
+                const options = currentData.blocks.niches[nicheKey][bKey] || [];
+                html += `<h4 style="margin: 15px 0 5px; font-size: 0.9rem; display:flex; justify-content: space-between; align-items:center;">
+                    ${blockNames[bKey]}
+                    <button class="btn-plus" style="min-width:30px; height:30px; font-size:1rem;" onclick="window.addNewBlock('${nicheKey}', '${bKey}', 'niche')">+</button>
+                </h4>`;
+                
+                if (options.length === 0) {
+                    html += `<p style="font-size: 0.85rem; color: #888; margin-bottom: 10px;">Пока пусто. Нажмите "+", чтобы добавить.</p>`;
+                } else {
+                    options.forEach((text, i) => {
                         html += `<div class="editor-block">
                             <p>${text}</p>
                             <button onclick="window.editBlock('${nicheKey}', '${bKey}', 'niche', ${i})">✏️</button>
