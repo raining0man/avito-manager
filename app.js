@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initSelectors();
         renderAccounts();
         renderTemplates();
-        window.renderEditorBlocks();
+        window.renderEditorBlocks(); // Не закрываем вкладку
     }
 
     function initSelectors() {
@@ -99,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const editNicheSelect = document.getElementById('edit-niche-select');
         const filterNiche = document.getElementById('filter-niche');
         
+        // СОХРАНЯЕМ ТЕКУЩИЕ ЗНАЧЕНИЯ
+        const currentNicheVal = nicheSelect.value;
+        const currentEditNicheVal = editNicheSelect.value;
         const currentFilterVal = filterNiche.value;
         
         nicheSelect.innerHTML = '<option value="">-- Выберите нишу --</option>';
@@ -112,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
             filterNiche.innerHTML += `<option value="${key}">${name}</option>`;
         }
 
+        // ВОССТАНАВЛИВАЕМ ЗНАЧЕНИЯ
+        nicheSelect.value = currentNicheVal;
+        editNicheSelect.value = currentEditNicheVal;
         filterNiche.value = currentFilterVal;
     }
 
@@ -119,6 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const nicheKey = document.getElementById('niche-select').value;
         const container = document.getElementById('block-selectors');
         const titleSelect = document.getElementById('title-select');
+        
+        // СОХРАНЯЕМ ВЫБРАННЫЕ БЛОКИ
+        const currentTitleVal = titleSelect.value;
+        const blockSelections = {};
+        document.querySelectorAll('.block-select').forEach(s => {
+            blockSelections[s.dataset.key] = s.value;
+        });
         
         container.innerHTML = '';
         titleSelect.innerHTML = '<option value="">-- Выбрать из готовых --</option>';
@@ -133,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         titles.forEach(t => {
             titleSelect.innerHTML += `<option value="${t}">${t}</option>`;
         });
+        titleSelect.value = currentTitleVal;
 
         const nicheBlocks = currentData.blocks.niches[nicheKey];
         
@@ -164,6 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn-plus" onclick="window.addNewBlock('${nicheKey}', '${config.key}', '${config.source}')" title="Добавить новый вариант">+</button>
                     </div></div>`;
                 container.innerHTML += selectHtml;
+            }
+        });
+
+        // ВОССТАНАВЛИВАЕМ ВЫБРАННЫЕ БЛОКИ
+        document.querySelectorAll('.block-select').forEach(s => {
+            if (blockSelections[s.dataset.key] !== undefined) {
+                s.value = blockSelections[s.dataset.key];
             }
         });
 
@@ -434,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
         modal.close();
         window.updateBuilderBlocks();
-        window.renderEditorBlocks();
+        window.renderEditorBlocks(); // Вкладка остается открытой на выбранной нише
     };
 
     window.addAccount = function() {
