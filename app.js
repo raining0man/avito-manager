@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // ПЕРЕМЕННЫЕ СИНХРОНИЗАЦИИ
     let isReady = false;
     let isSaving = false;
     let dataVersion = 0;
@@ -17,18 +16,46 @@ document.addEventListener('DOMContentLoaded', () => {
         accounts: [], 
         templates: [], 
         placements: [], 
-        blocks: { universal: { photo: [], visit: [], brands: [], location: [] }, niches: {} } 
+        blocks: { universal: {}, niches: {} } 
     };
 
     // ==========================================
-    // 1. ЛОКАЛЬНЫЙ КЭШ (Защита от потери связи)
+    // МИГРАЦИЯ ДАННЫХ (Строки -> Объекты с ID и скрытием)
+    // ==========================================
+    function migrateBlockData() {
+        if (!currentData.blocks) return;
+        
+        const processArr = (arr) => {
+            if (!Array.isArray(arr)) return [];
+            return arr.map(item => {
+                if (typeof item === 'string') {
+                    return { id: 'blk_' + Math.random().toString(36).slice(2, 9), text: item, hidden: false };
+                }
+                if (!item.id) item.id = 'blk_' + Math.random().toString(36).slice(2, 9);
+                if (item.hidden === undefined) item.hidden = false;
+                return item;
+            });
+        };
+
+        for (let key in currentData.blocks.universal) {
+            currentData.blocks.universal[key] = processArr(currentData.blocks.universal[key]);
+        }
+        for (let nKey in currentData.blocks.niches) {
+            for (let bKey in currentData.blocks.niches[nKey]) {
+                if (Array.isArray(currentData.blocks.niches[nKey][bKey])) {
+                    currentData.blocks.niches[nKey][bKey] = processArr(currentData.blocks.niches[nKey][bKey]);
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // ЛОКАЛЬНЫЙ КЭШ
     // ==========================================
     function saveToLocalCache() {
         try {
             localStorage.setItem('avito_manager_cache', JSON.stringify({
-                ...currentData,
-                version: dataVersion,
-                updatedAt: new Date().toISOString()
+                ...currentData, version: dataVersion, updatedAt: new Date().toISOString()
             }));
         } catch (e) { console.warn("Ошибка кэша:", e); }
     }
@@ -45,27 +72,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     blocks: parsed.blocks || currentData.blocks
                 };
                 dataVersion = parsed.version || 0;
+                migrateBlockData(); // Прогоняем миграцию
                 return true;
             }
-        } catch (e) { console.warn("Ошибка чтения кэша:", e); }
+        } catch (e) { console.warn("Ошибка кэша:", e); }
         return false;
     }
 
     // ==========================================
-    // 2. СИНХРОНИЗАЦИЯ С FIREBASE
+    // СИНХРОНИЗАЦИЯ
     // ==========================================
     function startSync() {
         const docRef = window.doc(window.db, "data/main");
         
         window.onSnapshot(docRef, (docSnap) => {
-            if (isSaving) return; // Игнорируем, пока сами сохраняем
+            if (isSaving) return; 
             
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 const newVersion = data.version || 0;
                 
                 if (!firstSnapshot) {
-                    // Первая загрузка
                     firstSnapshot = true;
                     currentData = {
                         accounts: data.accounts || [],
@@ -74,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         blocks: data.blocks || currentData.blocks
                     };
                     dataVersion = newVersion;
+                    migrateBlockData(); // Прогоняем миграцию
                     isReady = true;
                     saveToLocalCache();
                     renderAll();
@@ -81,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusEl.style.color = "#10b981";
                 } 
                 else if (newVersion !== dataVersion) {
-                    // Обновление с другого устройства
                     currentData = {
                         accounts: data.accounts || [],
                         templates: data.templates || [],
@@ -89,17 +116,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         blocks: data.blocks || currentData.blocks
                     };
                     dataVersion = newVersion;
+                    migrateBlockData(); // Прогоняем миграцию
                     saveToLocalCache();
                     renderAll();
                     statusEl.textContent = "Обновлено из облака";
                     statusEl.style.color = "#10b981";
                 }
             } else {
-                // База пуста (первый запуск)
                 if (!firstSnapshot) {
                     firstSnapshot = true;
                     isReady = true;
-                    saveData(); // Отправляем дефолтную структуру
+                    saveData();
                     statusEl.textContent = "Готово к работе";
                     statusEl.style.color = "#10b981";
                 }
@@ -108,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Ошибка синхронизации:", error);
             statusEl.textContent = "Ошибка сети (Локально)";
             statusEl.style.color = "#ef4444";
-            isReady = true; // Разрешаем работу из кэша
+            isReady = true;
         });
     }
 
@@ -124,9 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const docRef = window.doc(window.db, "data/main");
             await window.setDoc(docRef, {
-                ...currentData,
-                version: dataVersion,
-                updatedAt: new Date().toISOString() // В реальном проекте лучше FieldValue.serverTimestamp()
+                ...currentData, version: dataVersion, updatedAt: new Date().toISOString()
             });
             statusEl.textContent = "Синхронизировано";
             statusEl.style.color = "#10b981";
@@ -134,17 +159,16 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("ОШИБКА СОХРАНЕНИЯ:", error);
             statusEl.textContent = "Ошибка сети (Локально)";
             statusEl.style.color = "#ef4444";
-            alert("Данные сохранены локально, но не ушли в облако. Проверьте интернет.");
+            alert("Данные сохранены локально, но не ушли в облако.");
         } finally {
             isSaving = false;
         }
     }
 
     // ==========================================
-    // 3. ИНИЦИАЛИЗАЦИЯ
+    // ИНИЦИАЛИЗАЦИЯ
     // ==========================================
     async function init() {
-        // Сначала грузим кэш для мгновенного показа
         if (loadFromLocalCache()) {
             renderAll();
             statusEl.textContent = "Локальные данные. Подключение...";
@@ -164,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 4. UI И ЛОГИКА (Функции отрисовки)
+    // UI И ЛОГИКА
     // ==========================================
     function renderAll() {
         initSelectors();
@@ -199,23 +223,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.createNiche = function() {
-        const name = prompt("Введите название новой ниши (например, Ремонт двигателя):");
+        const name = prompt("Введите название новой ниши:");
         if (!name || !name.trim()) return;
-        
         const key = 'niche_' + Date.now();
         currentData.blocks.niches[key] = {
             name: name.trim(), titles: [], problem: [], process: [], advantages: [], cta: [], top_services: []
         };
-        
         saveData();
         initSelectors();
         document.getElementById('edit-niche-select').value = key;
         window.renderEditorBlocks();
     };
 
+    // ФУНКЦИЯ СКРЫТИЯ БЛОКА
+    window.toggleBlockVisibility = function(source, nicheKey, blockKey, id) {
+        const arr = source === 'universal' ? currentData.blocks.universal[blockKey] : currentData.blocks.niches[nicheKey][blockKey];
+        const item = arr.find(x => x.id === id);
+        if (item) {
+            item.hidden = !item.hidden;
+            saveData();
+            window.updateBuilderBlocks(); // Обновляем селекты в конструкторе
+        }
+    };
+
     window.generateRandomAd = function() {
         const nicheKey = document.getElementById('niche-select').value;
-        if (!nicheKey) return alert("Сначала выберите нишу для подбора!");
+        if (!nicheKey) return alert("Сначала выберите нишу!");
 
         const existingTemplates = currentData.templates.filter(t => t.niche === nicheKey && t.status === 'active');
         let usedCombinations = [];
@@ -239,21 +272,29 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'location', source: 'universal' }
         ];
 
-        const availableLengths = blockConfig.map(cfg => {
+        // Собираем ТОЛЬКО видимые блоки
+        const availableIds = blockConfig.map(cfg => {
             const arr = cfg.source === 'universal' ? currentData.blocks.universal[cfg.key] : nicheBlocks[cfg.key];
-            return arr ? arr.length : 0; 
+            return (arr || []).filter(x => !x.hidden).map(x => x.id);
         });
 
-        if (availableLengths.includes(0)) {
-            return alert("Ошибка! В некоторых блоках нет ни одного варианта. Заполните все блоки перед использованием рандомайзера.");
+        if (availableIds.some(ids => ids.length === 0)) {
+            return alert("Ошибка! В некоторых блоках скрыты все варианты. Включите хотя бы по одному.");
         }
 
         let found = false;
-        let randomIndices = [];
+        let randomIds = [];
         let attempts = 0;
 
         while (!found && attempts < 1000) {
-            randomIndices = availableLengths.map(len => Math.floor(Math.random() * len));
+            randomIds = availableIds.map(ids => ids[Math.floor(Math.random() * ids.length)]);
+            
+            // Переводим выбранные ID обратно в индексы оригинального массива для проверки
+            const randomIndices = randomIds.map((id, idx) => {
+                const arr = blockConfig[idx].source === 'universal' ? currentData.blocks.universal[blockConfig[idx].key] : nicheBlocks[blockConfig[idx].key];
+                return arr.findIndex(x => x.id === id);
+            });
+            
             if (!usedCombinations.includes(randomIndices.join('-'))) found = true;
             attempts++;
         }
@@ -262,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         window.updateBuilderBlocks();
         const selects = document.querySelectorAll('.block-select');
-        selects.forEach((select, idx) => { if (randomIndices[idx] !== undefined) select.value = randomIndices[idx]; });
+        selects.forEach((select, idx) => { if (randomIds[idx] !== undefined) select.value = randomIds[idx]; });
         window.assemblePreview();
         document.getElementById('ad-preview').scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
@@ -286,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const titles = currentData.blocks.niches[nicheKey].titles || [];
-        titles.forEach(t => titleSelect.innerHTML += `<option value="${t}">${t}</option>`);
+        titles.forEach(t => titleSelect.innerHTML += `<option value="${t.id}">${t.text}</option>`);
         titleSelect.value = currentTitleVal;
 
         const nicheBlocks = currentData.blocks.niches[nicheKey];
@@ -303,15 +344,18 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         blockConfig.forEach((config, idx) => {
-            const options = config.source === 'universal' ? currentData.blocks.universal[config.key] : nicheBlocks[config.key];
+            const allOptions = config.source === 'universal' ? currentData.blocks.universal[config.key] : nicheBlocks[config.key];
+            const visibleOptions = (allOptions || []).filter(x => !x.hidden);
             
-            if (options && options.length > 0) {
+            if (visibleOptions.length > 0) {
                 let selectHtml = `<div class="input-group"><label>${idx + 1}. ${config.name}</label><div class="block-row"><select class="block-select" data-name="${config.name}" data-key="${config.key}" data-source="${config.source}" onchange="window.assemblePreview()"><option value="">-- Не использовать --</option>`;
-                options.forEach((opt, index) => selectHtml += `<option value="${index}">Вариант ${index + 1}: ${opt.substring(0, 40)}...</option>`);
+                visibleOptions.forEach(item => {
+                    selectHtml += `<option value="${item.id}">Вариант: ${item.text.substring(0, 40)}...</option>`;
+                });
                 selectHtml += `</select><button class="btn-plus" onclick="window.addNewBlock('${nicheKey}', '${config.key}', '${config.source}')" title="Добавить">+</button></div></div>`;
                 container.innerHTML += selectHtml;
             } else {
-                let selectHtml = `<div class="input-group"><label>${idx + 1}. ${config.name} (пусто)</label><div class="block-row"><select class="block-select" data-name="${config.name}" data-key="${config.key}" data-source="${config.source}" disabled><option value="">-- Нет вариантов --</option></select><button class="btn-plus" onclick="window.addNewBlock('${nicheKey}', '${config.key}', '${config.source}')" title="Добавить">+</button></div></div>`;
+                let selectHtml = `<div class="input-group"><label>${idx + 1}. ${config.name} (пусто)</label><div class="block-row"><select class="block-select" disabled><option value="">-- Все скрыты --</option></select><button class="btn-plus" onclick="window.addNewBlock('${nicheKey}', '${config.key}', '${config.source}')" title="Добавить">+</button></div></div>`;
                 container.innerHTML += selectHtml;
             }
         });
@@ -331,10 +375,12 @@ document.addEventListener('DOMContentLoaded', () => {
         selects.forEach(select => {
             const key = select.dataset.key;
             const source = select.dataset.source;
-            const index = select.value;
-            if (index !== "") {
-                const text = source === 'universal' ? currentData.blocks.universal[key][index] : currentData.blocks.niches[nicheKey][key][index];
-                if (text) parts.push(text);
+            const valId = select.value;
+            
+            if (valId !== "") {
+                const arr = source === 'universal' ? currentData.blocks.universal[key] : currentData.blocks.niches[nicheKey][key];
+                const item = arr.find(x => x.id === valId);
+                if (item) parts.push(item.text);
             }
         });
 
@@ -366,8 +412,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         selects.forEach((select, index) => {
             const name = select.dataset.name;
-            const val = select.value;
-            if (val !== "") autoCommentParts.push(`${index + 1}.${name}:${parseInt(val) + 1}`);
+            const valId = select.value;
+            
+            if (valId !== "") {
+                const arr = select.dataset.source === 'universal' ? currentData.blocks.universal[select.dataset.key] : currentData.blocks.niches[nicheKey][select.dataset.key];
+                const originalIndex = arr.findIndex(x => x.id === valId);
+                if (originalIndex !== -1) {
+                    autoCommentParts.push(`${index + 1}.${name}:${originalIndex + 1}`);
+                }
+            }
         });
 
         const finalComment = manualComment ? `${manualComment} | Блоки: ${autoCommentParts.join(' / ')}` : `Блоки: ${autoCommentParts.join(' / ')}`;
@@ -386,7 +439,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateCounters();
     };
 
-    // Глобальный объект для сохранения состояния аккордеонов
     window.accordionStates = {};
 
     window.toggleAccordion = function(detailsEl) {
@@ -415,10 +467,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     <summary>${ruNames[bKey]} <span class="block-count">(${options.length})</span></summary>
                     <div class="block-content">
                         <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewBlock('universal', '${bKey}', 'universal')">+ Добавить вариант</button>`;
+                
                 if (options.length === 0) html += `<p style="font-size: 0.85rem; color: #888; text-align: center;">Пока пусто.</p>`;
                 else {
-                    options.forEach((text, i) => {
-                        html += `<div class="editor-block"><p>${text}</p><div style="display:flex;"><button onclick="window.editBlock('universal', '${bKey}', 'universal', ${i})">✏️</button><button onclick="window.deleteBlock('universal', '${bKey}', 'universal', ${i})">❌</button></div></div>`;
+                    options.forEach((item) => {
+                        html += `<div class="editor-block ${item.hidden ? 'hidden-block' : ''}">
+                            <p>${item.text}</p>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <label class="hide-checkbox" title="Скрыть из конструктора">
+                                    <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('universal', '${nicheKey}', '${bKey}', '${item.id}')"> Скрыть
+                                </label>
+                                <button onclick="window.editBlock('universal', '${bKey}', 'universal', '${item.id}')">✏️</button>
+                                <button onclick="window.deleteBlock('universal', '${bKey}', 'universal', '${item.id}')">❌</button>
+                            </div>
+                        </div>`;
                     });
                 }
                 html += `</div></details>`;
@@ -434,8 +496,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewTitle('${nicheKey}')">+ Добавить название</button>`;
             if (titles.length === 0) html += `<p style="font-size: 0.85rem; color: #888; text-align: center;">Пока пусто.</p>`;
             else {
-                titles.forEach((t, i) => {
-                    html += `<div class="editor-block"><p>${t}</p><div style="display:flex;"><button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', ${i})">✏️</button><button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', ${i})">❌</button></div></div>`;
+                titles.forEach((item) => {
+                    html += `<div class="editor-block ${item.hidden ? 'hidden-block' : ''}">
+                        <p>${item.text}</p>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <label class="hide-checkbox" title="Скрыть из конструктора">
+                                <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('niche', '${nicheKey}', 'titles', '${item.id}')"> Скрыть
+                            </label>
+                            <button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', '${item.id}')">✏️</button>
+                            <button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', '${item.id}')">❌</button>
+                        </div>
+                    </div>`;
                 });
             }
             html += `</div></details>`;
@@ -452,10 +523,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     <summary>${blockNames[bKey]} <span class="block-count">(${options.length})</span></summary>
                     <div class="block-content">
                         <button class="btn-add" style="margin-bottom: 10px; background:#10b981;" onclick="window.addNewBlock('${nicheKey}', '${bKey}', 'niche')">+ Добавить вариант</button>`;
+                
                 if (options.length === 0) html += `<p style="font-size: 0.85rem; color: #888; text-align: center;">Пока пусто.</p>`;
                 else {
-                    options.forEach((text, i) => {
-                        html += `<div class="editor-block"><p>${text}</p><div style="display:flex;"><button onclick="window.editBlock('${nicheKey}', '${bKey}', 'niche', ${i})">✏️</button><button onclick="window.deleteBlock('${nicheKey}', '${bKey}', 'niche', ${i})">❌</button></div></div>`;
+                    options.forEach((item) => {
+                        html += `<div class="editor-block ${item.hidden ? 'hidden-block' : ''}">
+                            <p>${item.text}</p>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <label class="hide-checkbox" title="Скрыть из конструктора">
+                                    <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('niche', '${nicheKey}', '${bKey}', '${item.id}')"> Скрыть
+                                </label>
+                                <button onclick="window.editBlock('${nicheKey}', '${bKey}', 'niche', '${item.id}')">✏️</button>
+                                <button onclick="window.deleteBlock('${nicheKey}', '${bKey}', 'niche', '${item.id}')">❌</button>
+                            </div>
+                        </div>`;
                     });
                 }
                 html += `</div></details>`;
@@ -469,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!nicheKey || nicheKey === 'universal') return alert("Выберите нишу!");
         const newTitle = prompt("Введите название (до 50 символов):");
         if (!newTitle || newTitle.length > 50) return alert("Название пустое или длиннее 50 символов!");
-        currentData.blocks.niches[nicheKey].titles.push(newTitle.trim());
+        currentData.blocks.niches[nicheKey].titles.push({ id: 'blk_' + Date.now(), text: newTitle.trim(), hidden: false });
         saveData();
         window.updateBuilderBlocks();
         window.renderEditorBlocks();
@@ -478,28 +559,37 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addNewBlock = function(nicheKey, blockKey, source) {
         const newText = prompt("Введите текст варианта:");
         if (!newText || !newText.trim()) return;
-        if (source === 'universal') currentData.blocks.universal[blockKey].push(newText.trim());
-        else currentData.blocks.niches[nicheKey][blockKey].push(newText.trim());
+        const newItem = { id: 'blk_' + Date.now(), text: newText.trim(), hidden: false };
+        
+        if (source === 'universal') currentData.blocks.universal[blockKey].push(newItem);
+        else currentData.blocks.niches[nicheKey][blockKey].push(newItem);
+        
         saveData();
         window.updateBuilderBlocks();
         window.renderEditorBlocks();
     };
 
-    window.editBlock = function(nicheKey, blockKey, source, index) {
-        let text = source === 'universal' ? currentData.blocks.universal[blockKey][index] : currentData.blocks.niches[nicheKey][blockKey][index];
+    window.editBlock = function(nicheKey, blockKey, source, id) {
+        const arr = source === 'universal' ? currentData.blocks.universal[blockKey] : currentData.blocks.niches[nicheKey][blockKey];
+        const item = arr.find(x => x.id === id);
+        if (!item) return;
+
         const modal = document.getElementById('edit-modal');
-        modal.dataset.type = 'block'; modal.dataset.nicheKey = nicheKey; modal.dataset.blockKey = blockKey; modal.dataset.source = source; modal.dataset.index = index;
+        modal.dataset.type = 'block'; modal.dataset.nicheKey = nicheKey; modal.dataset.blockKey = blockKey; modal.dataset.source = source; modal.dataset.id = id;
         document.getElementById('modal-title').textContent = 'Редактировать';
         document.getElementById('group-1').style.display = 'none';
         document.getElementById('group-2').style.display = 'flex';
-        document.getElementById('field-2').value = text;
+        document.getElementById('field-2').value = item.text;
         modal.showModal();
     };
 
-    window.deleteBlock = function(nicheKey, blockKey, source, index) {
+    window.deleteBlock = function(nicheKey, blockKey, source, id) {
         if (!confirm("Удалить вариант?")) return;
-        if (source === 'universal') currentData.blocks.universal[blockKey].splice(index, 1);
-        else currentData.blocks.niches[nicheKey][blockKey].splice(index, 1);
+        if (source === 'universal') {
+            currentData.blocks.universal[blockKey] = currentData.blocks.universal[blockKey].filter(x => x.id !== id);
+        } else {
+            currentData.blocks.niches[nicheKey][blockKey] = currentData.blocks.niches[nicheKey][blockKey].filter(x => x.id !== id);
+        }
         saveData();
         window.updateBuilderBlocks();
         window.renderEditorBlocks();
@@ -532,9 +622,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const newText = document.getElementById('field-2').value.trim();
             if (!newText) return alert("Текст не может быть пустым");
-            const nicheKey = modal.dataset.nicheKey, blockKey = modal.dataset.blockKey, source = modal.dataset.source, index = modal.dataset.index;
-            if (source === 'universal') currentData.blocks.universal[blockKey][index] = newText;
-            else currentData.blocks.niches[nicheKey][blockKey][index] = newText;
+            const nicheKey = modal.dataset.nicheKey, blockKey = modal.dataset.blockKey, source = modal.dataset.source, id = modal.dataset.id;
+            const arr = source === 'universal' ? currentData.blocks.universal[blockKey] : currentData.blocks.niches[nicheKey][blockKey];
+            const item = arr.find(x => x.id === id);
+            if (item) item.text = newText;
         }
         saveData();
         modal.close();
@@ -651,6 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (importedData.accounts && importedData.templates && importedData.blocks) {
                     if(confirm("Вы уверены? Текущие данные будут заменены.")) {
                         currentData = importedData;
+                        migrateBlockData(); // Миграция при импорте
                         saveData();
                         alert("База восстановлена!");
                     }
