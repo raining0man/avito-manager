@@ -87,3 +87,26 @@ details.block-group[open] summary { border-bottom: 1px solid #e5e7eb; background
 
 .editor-block { background: white; border: 1px solid #e5e7eb; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .editor-block p { font-size: 0.85rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Стили для галочки "Скрыть" */
+.hide-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #6b7280;
+    user-select: none;
+}
+.hide-checkbox input {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+.hide-checkbox:hover {
+    color: #ef4444;
+}
+.editor-block.hidden-block p {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
