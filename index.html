@@ -95,23 +95,25 @@
             <div class="list-container builder-form">
                 <div class="input-group">
                     <label>Выберите нишу для редактирования:</label>
-                    <div class="block-row">
-                        <select id="edit-niche-select" onchange="window.renderEditorBlocks()"></select>
-                        <button class="btn-plus" onclick="window.editNicheName()" title="Переименовать нишу">✏️</button>
-                    </div>
+                    <select id="edit-niche-select" onchange="window.renderEditorBlocks()"></select>
                 </div>
                 <div id="editor-container"></div>
             </div>
         </section>
 
-        <!-- ... блок аккаунтов ... -->
+        <section class="card">
+            <div class="card-header">
+                <h2>👤 Аккаунты</h2>
+                <button class="btn-add" onclick="window.addAccount()">+ Добавить</button>
+            </div>
+            <div id="accounts-list" class="list-container"></div>
+        </section>
 
         <section class="card">
             <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                 <h2>📦 Сохраненные объявления</h2>
                 <div class="filters-row">
                     <input type="text" id="search-templates" placeholder="🔍 Поиск по названию..." oninput="window.renderTemplates()">
-                    <!-- ДОБАВЛЕН onchange -->
                     <select id="filter-niche" onchange="window.renderTemplates()">
                         <option value="">Все ниши</option>
                     </select>
@@ -119,6 +121,7 @@
             </div>
             <div id="templates-list" class="list-container"></div>
         </section>
+    </main>
 
     <dialog id="edit-modal">
         <form method="dialog">
