@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ==========================================
-    // МИГРАЦИЯ ДАННЫХ (Строки -> Объекты с ID и скрытием)
+    // МИГРАЦИЯ ДАННЫХ
     // ==========================================
     function migrateBlockData() {
         if (!currentData.blocks) return;
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     blocks: parsed.blocks || currentData.blocks
                 };
                 dataVersion = parsed.version || 0;
-                migrateBlockData(); // Прогоняем миграцию
+                migrateBlockData();
                 return true;
             }
         } catch (e) { console.warn("Ошибка кэша:", e); }
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         blocks: data.blocks || currentData.blocks
                     };
                     dataVersion = newVersion;
-                    migrateBlockData(); // Прогоняем миграцию
+                    migrateBlockData();
                     isReady = true;
                     saveToLocalCache();
                     renderAll();
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         blocks: data.blocks || currentData.blocks
                     };
                     dataVersion = newVersion;
-                    migrateBlockData(); // Прогоняем миграцию
+                    migrateBlockData();
                     saveToLocalCache();
                     renderAll();
                     statusEl.textContent = "Обновлено из облака";
@@ -235,35 +235,67 @@ document.addEventListener('DOMContentLoaded', () => {
         window.renderEditorBlocks();
     };
 
-    // ФУНКЦИЯ СКРЫТИЯ БЛОКА
-    window.toggleBlockVisibility = function(source, nicheKey, blockKey, id) {
-        const arr = source === 'universal' ? currentData.blocks.universal[blockKey] : currentData.blocks.niches[nicheKey][blockKey];
-        const item = arr.find(x => x.id === id);
-        if (item) {
-            item.hidden = !item.hidden;
+    // НОВАЯ ФУНКЦИЯ: Переименование ниши
+    window.editNicheName = function() {
+        const nicheKey = document.getElementById('edit-niche-select').value;
+        if (!nicheKey) return alert("Выберите нишу!");
+        if (nicheKey === 'universal') return alert("Нельзя переименовать системную нишу 'Общее'");
+        
+        const currentName = currentData.blocks.niches[nicheKey].name;
+        const newName = prompt("Введите новое название ниши:", currentName);
+        
+        if (newName && newName.trim() && newName !== currentName) {
+            currentData.blocks.niches[nicheKey].name = newName.trim();
             saveData();
-            window.updateBuilderBlocks(); // Обновляем селекты в конструкторе
+            initSelectors();
+            document.getElementById('edit-niche-select').value = nicheKey;
+            document.getElementById('niche-select').value = nicheKey;
+            window.renderEditorBlocks();
         }
     };
 
+    window.toggleBlockVisibility = function(source, nicheKey, blockKey, id, checkboxEl) {
+        const arr = source === 'universal' ? currentData.blocks.universal[blockKey] : currentData.blocks.niches[nicheKey][blockKey];
+        const item = arr.find(x => x.id === id);
+        if (item) {
+            item.hidden = checkboxEl.checked;
+            
+            const parentDiv = checkboxEl.closest('.editor-block');
+            if (item.hidden) parentDiv.classList.add('hidden-block');
+            else parentDiv.classList.remove('hidden-block');
+            
+            saveData();
+            window.updateBuilderBlocks();
+        }
+    };
+
+    // ОБНОВЛЕННЫЙ РАНДОМАЙЗЕР (Включает названия)
     window.generateRandomAd = function() {
         const nicheKey = document.getElementById('niche-select').value;
         if (!nicheKey) return alert("Сначала выберите нишу!");
+
+        const nicheBlocks = currentData.blocks.niches[nicheKey];
+        const visibleTitles = (nicheBlocks.titles || []).filter(t => !t.hidden);
+        
+        if (visibleTitles.length === 0) {
+            return alert("Нет доступных названий для этой ниши. Добавьте или включите хотя бы одно.");
+        }
 
         const existingTemplates = currentData.templates.filter(t => t.niche === nicheKey && t.status === 'active');
         let usedCombinations = [];
         
         existingTemplates.forEach(t => {
             if (t.comment) {
-                const matches = t.comment.match(/:\d+/g);
+                // Парсим индексы из комментария: "0.Название:1 / 1.Фото:2..."
+                const matches = t.comment.match(/\d+\.[^:]+:\d+/g);
                 if (matches) {
-                    const indices = matches.map(m => parseInt(m.slice(1)));
-                    if (indices.length === 9) usedCombinations.push(indices.join('-'));
+                    const indices = matches.map(m => parseInt(m.split(':')[1]));
+                    // Ожидаем 10 элементов: 1 название + 9 блоков
+                    if (indices.length === 10) usedCombinations.push(indices.join('-'));
                 }
             }
         });
 
-        const nicheBlocks = currentData.blocks.niches[nicheKey];
         const blockConfig = [
             { key: 'photo', source: 'universal' }, { key: 'visit', source: 'universal' },
             { key: 'problem', source: 'niche' }, { key: 'process', source: 'niche' },
@@ -272,7 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'location', source: 'universal' }
         ];
 
-        // Собираем ТОЛЬКО видимые блоки
         const availableIds = blockConfig.map(cfg => {
             const arr = cfg.source === 'universal' ? currentData.blocks.universal[cfg.key] : nicheBlocks[cfg.key];
             return (arr || []).filter(x => !x.hidden).map(x => x.id);
@@ -283,27 +314,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let found = false;
+        let randomTitleId = null;
         let randomIds = [];
         let attempts = 0;
 
         while (!found && attempts < 1000) {
+            // Выбираем случайное название
+            randomTitleId = visibleTitles[Math.floor(Math.random() * visibleTitles.length)].id;
+            
+            // Выбираем случайные блоки
             randomIds = availableIds.map(ids => ids[Math.floor(Math.random() * ids.length)]);
             
-            // Переводим выбранные ID обратно в индексы оригинального массива для проверки
+            // Переводим в индексы для проверки дублей
+            const titleIdx = nicheBlocks.titles.findIndex(t => t.id === randomTitleId);
             const randomIndices = randomIds.map((id, idx) => {
                 const arr = blockConfig[idx].source === 'universal' ? currentData.blocks.universal[blockConfig[idx].key] : nicheBlocks[blockConfig[idx].key];
                 return arr.findIndex(x => x.id === id);
             });
             
-            if (!usedCombinations.includes(randomIndices.join('-'))) found = true;
+            const comboString = [titleIdx + 1, ...randomIndices.map(i => i + 1)].join('-');
+            if (!usedCombinations.includes(comboString)) found = true;
             attempts++;
         }
 
         if (!found) return alert("Все возможные уникальные комбинации исчерпаны!");
 
         window.updateBuilderBlocks();
+        
+        // Подставляем название
+        document.getElementById('title-select').value = randomTitleId;
+        document.getElementById('ad-title').value = visibleTitles.find(t => t.id === randomTitleId).text;
+        window.updateCounters();
+
+        // Подставляем блоки
         const selects = document.querySelectorAll('.block-select');
         selects.forEach((select, idx) => { if (randomIds[idx] !== undefined) select.value = randomIds[idx]; });
+        
         window.assemblePreview();
         document.getElementById('ad-preview').scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
@@ -326,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const titles = currentData.blocks.niches[nicheKey].titles || [];
+        const titles = (currentData.blocks.niches[nicheKey].titles || []).filter(t => !t.hidden);
         titles.forEach(t => titleSelect.innerHTML += `<option value="${t.id}">${t.text}</option>`);
         titleSelect.value = currentTitleVal;
 
@@ -407,8 +453,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!description) return alert("Выберите блоки!");
         if (!nicheKey) return alert("Выберите нишу!");
 
-        const selects = document.querySelectorAll('.block-select');
         let autoCommentParts = [];
+        
+        // Добавляем название в комментарий (для рандомайзера)
+        const selectedTitleId = document.getElementById('title-select').value;
+        if (selectedTitleId) {
+            const titles = currentData.blocks.niches[nicheKey].titles || [];
+            const titleIdx = titles.findIndex(t => t.id === selectedTitleId);
+            if (titleIdx !== -1) {
+                autoCommentParts.push(`0.Название:${titleIdx + 1}`);
+            }
+        }
+
+        const selects = document.querySelectorAll('.block-select');
         
         selects.forEach((select, index) => {
             const name = select.dataset.name;
@@ -475,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p>${item.text}</p>
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <label class="hide-checkbox" title="Скрыть из конструктора">
-                                    <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('universal', '${nicheKey}', '${bKey}', '${item.id}')"> Скрыть
+                                    <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('universal', '${nicheKey}', '${bKey}', '${item.id}', this)"> Скрыть
                                 </label>
                                 <button onclick="window.editBlock('universal', '${bKey}', 'universal', '${item.id}')">✏️</button>
                                 <button onclick="window.deleteBlock('universal', '${bKey}', 'universal', '${item.id}')">❌</button>
@@ -501,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>${item.text}</p>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <label class="hide-checkbox" title="Скрыть из конструктора">
-                                <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('niche', '${nicheKey}', 'titles', '${item.id}')"> Скрыть
+                                <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('niche', '${nicheKey}', 'titles', '${item.id}', this)"> Скрыть
                             </label>
                             <button onclick="window.editBlock('${nicheKey}', 'titles', 'niche', '${item.id}')">✏️</button>
                             <button onclick="window.deleteBlock('${nicheKey}', 'titles', 'niche', '${item.id}')">❌</button>
@@ -531,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p>${item.text}</p>
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <label class="hide-checkbox" title="Скрыть из конструктора">
-                                    <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('niche', '${nicheKey}', '${bKey}', '${item.id}')"> Скрыть
+                                    <input type="checkbox" ${item.hidden ? 'checked' : ''} onchange="window.toggleBlockVisibility('niche', '${nicheKey}', '${bKey}', '${item.id}', this)"> Скрыть
                                 </label>
                                 <button onclick="window.editBlock('${nicheKey}', '${bKey}', 'niche', '${item.id}')">✏️</button>
                                 <button onclick="window.deleteBlock('${nicheKey}', '${bKey}', 'niche', '${item.id}')">❌</button>
@@ -742,7 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (importedData.accounts && importedData.templates && importedData.blocks) {
                     if(confirm("Вы уверены? Текущие данные будут заменены.")) {
                         currentData = importedData;
-                        migrateBlockData(); // Миграция при импорте
+                        migrateBlockData();
                         saveData();
                         alert("База восстановлена!");
                     }
