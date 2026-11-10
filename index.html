@@ -2,155 +2,33 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Менеджер и Конструктор объявлений</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Менеджер объявлений</title>
     <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="style.css">
-    
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyA3xBY633zOFgmDtoESeTZAviXGoRAKQnQ",
-            authDomain: "avito-manager-3a84b.firebaseapp.com",
-            projectId: "avito-manager-3a84b",
-            storageBucket: "avito-manager-3a84b.firebasestorage.app",
-            messagingSenderId: "205598987349",
-            appId: "1:205598987349:web:d8ae2abe3fc8c9ba1f70dc"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        window.db = db; window.auth = auth; window.doc = doc; window.onSnapshot = onSnapshot; window.setDoc = setDoc; window.signInAnonymously = signInAnonymously;
-    </script>
-    <script src="app.js" defer></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <div style="display:flex; align-items:center; gap: 10px;">
-            <h1>📋 Менеджер</h1>
-            <span id="sync-status">Подключение...</span>
+    <header class="app-header">
+        <div class="brand">
+            <span class="logo">📋</span>
+            <span class="brand-name">Менеджер</span>
         </div>
-        <div class="header-btns">
-            <button class="btn-icon" onclick="window.exportData()" title="Скачать базу (JSON)">📥 Экспорт</button>
-            <label class="btn-icon" title="Загрузить базу (JSON)">
-                📤 Импорт
-                <input type="file" id="import-file" onchange="window.importData(event)" accept=".json" hidden>
+        <nav class="tabs" id="main-tabs" role="tablist"></nav>
+        <div class="header-right">
+            <span id="sync-status" class="sync-pill sync-connecting" title="Статус синхронизации">Подключение…</span>
+            <button class="btn-icon" id="btn-theme" title="Тема">🌙</button>
+            <button class="btn-icon" id="btn-export" title="Экспорт базы">📥</button>
+            <label class="btn-icon" title="Импорт базы">
+                📤 <input type="file" id="import-file" accept=".json" hidden>
             </label>
         </div>
     </header>
 
-    <main>
-        <section class="card">
-            <div class="card-header">
-                <h2>🛠 Конструктор объявлений</h2>
-            </div>
-            <div class="list-container builder-form">
-                <div class="input-group">
-                    <label>Ниша (категория):</label>
-                    <div class="block-row">
-                        <select id="niche-select" onchange="window.updateBuilderBlocks()"></select>
-                        <button class="btn-add" style="background: #8b5cf6; padding: 10px;" onclick="window.generateRandomAd()" title="Подобрать уникальную комбинацию">🎲 Рандом</button>
-                    </div>
-                </div>
+    <main id="app-main"></main>
 
-                <div class="input-group">
-                    <label>Название объявления (макс. 50 символов):</label>
-                    <div class="block-row" style="margin-bottom: 5px;">
-                        <select id="title-select" onchange="document.getElementById('ad-title').value = this.value; window.updateCounters();">
-                            <option value="">-- Выбрать из готовых --</option>
-                        </select>
-                        <button class="btn-plus" onclick="window.addNewTitle()" title="Добавить новое название">+</button>
-                    </div>
-                    <input type="text" id="ad-title" oninput="window.updateCounters()" placeholder="Или введите новое название вручную">
-                    <div class="char-counter"><span id="title-count">0</span> / 50</div>
-                </div>
+    <div id="toasts" class="toasts"></div>
+    <dialog id="modal" class="modal"></dialog>
 
-                <div id="block-selectors"></div>
-
-                <div class="input-group">
-                    <label>Предпросмотр описания (макс. 3000 символов):</label>
-                    <textarea id="ad-preview" rows="10" readonly></textarea>
-                    <div class="char-counter"><span id="desc-count">0</span> / 3000</div>
-                </div>
-
-                <div class="input-group">
-                    <label>Комментарий (внутренний):</label>
-                    <input type="text" id="ad-comment" placeholder="Например: Залито на аккаунт Авито-1">
-                </div>
-
-                <button class="btn-add" onclick="window.saveAssembledAd()" style="width: 100%; margin-top: 10px;">💾 Сохранить готовое объявление</button>
-            </div>
-        </section>
-
-        <section class="card">
-            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
-                <h2>🗂 Управление контентом</h2>
-                <button class="btn-add" onclick="window.createNiche()" style="background: #10b981;">+ Создать нишу</button>
-            </div>
-            <div class="list-container builder-form">
-                <div class="input-group">
-                    <label>Выберите нишу для редактирования:</label>
-                    <select id="edit-niche-select" onchange="window.renderEditorBlocks()"></select>
-                </div>
-                <div id="editor-container"></div>
-            </div>
-        </section>
-
-        <section class="card">
-            <div class="card-header">
-                <h2>👤 Аккаунты</h2>
-                <button class="btn-add" onclick="window.addAccount()">+ Добавить</button>
-            </div>
-            <div id="accounts-list" class="list-container"></div>
-        </section>
-
-        <section class="card">
-            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
-                <h2>📦 Сохраненные объявления</h2>
-                <div class="filters-row">
-                    <input type="text" id="search-templates" placeholder="🔍 Поиск по названию..." oninput="window.renderTemplates()">
-                    <select id="filter-niche" onchange="window.renderTemplates()">
-                        <option value="">Все ниши</option>
-                    </select>
-                </div>
-            </div>
-            <div id="templates-list" class="list-container"></div>
-        </section>
-    </main>
-
-    <dialog id="edit-modal">
-        <form method="dialog">
-            <h2 id="modal-title">Редактировать</h2>
-            <div id="group-1" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px;">
-                <label id="label-1" style="font-weight: 600; font-size: 0.9rem;">Название</label>
-                <input type="text" id="field-1" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
-            </div>
-            <div id="group-2" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;">
-                <label id="label-2" style="font-weight: 600; font-size: 0.9rem;">Текст / Площадка</label>
-                <textarea id="field-2" rows="8" required style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;"></textarea>
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" onclick="document.getElementById('edit-modal').close()" style="padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer;">Отмена</button>
-                <button type="button" onclick="window.saveModal()" style="padding: 10px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: bold;">Сохранить</button>
-            </div>
-        </form>
-    </dialog>
-
-    <dialog id="accounts-modal">
-        <form method="dialog">
-            <h2>Привязать к аккаунтам</h2>
-            <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Поставьте галочки на аккаунтах, где размещено это объявление.</p>
-            <div id="accounts-checkboxes" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" onclick="document.getElementById('accounts-modal').close()" style="padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; background: white; cursor: pointer;">Отмена</button>
-                <button type="button" onclick="window.saveAccountsLink()" style="padding: 10px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: bold;">Сохранить</button>
-            </div>
-        </form>
-    </dialog>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
